@@ -23,6 +23,7 @@
     "swr": "^2.3.6"
   },
   "devDependencies": {
+    "@types/chrome": "^0.1.32",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
