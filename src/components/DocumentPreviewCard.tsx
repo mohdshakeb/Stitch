@@ -97,18 +97,21 @@ export default function DocumentPreviewCard({
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                     {highlights.slice(0, 5).map((h, i) => (
                         <div key={h.id} style={{
-                            padding: '8px 12px',
-                            backgroundColor: 'rgba(254, 243, 199, 0.5)',
-                            borderRadius: '4px',
-                            fontSize: '0.8rem',
+                            padding: '0',
+                            backgroundColor: 'transparent',
+                            borderRadius: '0',
+                            fontSize: '0.9rem',
                             color: 'hsl(var(--foreground))',
-                            lineHeight: '1.4',
+                            lineHeight: '1.6',
                             overflow: 'hidden',
                             textOverflow: 'ellipsis',
                             display: '-webkit-box',
                             WebkitLineClamp: 3,
                             WebkitBoxOrient: 'vertical' as const,
+                            position: 'relative',
+                            paddingLeft: '16px', // Indent for bullet
                         }}>
+                            <span style={{ position: 'absolute', left: 0, top: 0 }}>•</span>
                             "{h.text.substring(0, 150)}{h.text.length > 150 ? '...' : ''}"
                         </div>
                     ))}

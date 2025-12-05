@@ -220,11 +220,19 @@ function HomeContent() {
     if (!docToDelete) return;
 
     try {
+      // 1. Unlink associated highlights first (Orphan Cleanup)
+      const linkedHighlights = highlights.filter(h => h.documentId === id);
+      await Promise.all(linkedHighlights.map(h => addHighlight({ ...h, documentId: null })));
+
+      // 2. Delete the document
       await removeDocument(id);
       showToast('Document deleted', {
         type: 'success',
         onUndo: async () => {
+          // Restore document
           await addDocument(docToDelete);
+          // Restore links
+          await Promise.all(linkedHighlights.map(h => addHighlight({ ...h, documentId: id })));
         }
       });
     } catch (error) {
@@ -262,7 +270,23 @@ function HomeContent() {
           }
 
           const updatedHighlight = { ...highlight, documentId: docId };
-          await addHighlight(updatedHighlight); // This acts as update/upsert
+          await addHighlight(updatedHighlight); // Links metadata (Sidebar)
+
+          // Also append text to document body (Editable Content)
+          const targetDoc = documents.find(d => d.id === docId);
+          if (targetDoc) {
+            const newContent = targetDoc.content
+              ? `${targetDoc.content}<p><br></p><p>${highlight.text}</p>`
+              : `<p>${highlight.text}</p>`;
+
+            await addDocument({
+              ...targetDoc,
+              content: newContent,
+              updatedAt: new Date().toISOString()
+            });
+
+            showToast('Added to document', { type: 'success' });
+          }
         }
       } catch (error) {
         console.error('Error moving highlight:', error);

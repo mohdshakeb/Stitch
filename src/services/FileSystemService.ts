@@ -48,10 +48,63 @@ interface HighlightDB extends DBSchema {
     };
 }
 
+const SEED_HIGHLIGHTS: HighlightType[] = [
+    {
+        id: 'seed-1',
+        text: '👋 Welcome to Highlight! I\'m a sticky note. You can drag me around.',
+        url: 'https://example.com/welcome',
+        title: 'Welcome Guide',
+        favicon: 'https://www.google.com/s2/favicons?domain=example.com',
+        createdAt: new Date().toISOString(),
+        tags: [],
+        color: '#fef3c7', // Yellow
+    },
+    {
+        id: 'seed-2',
+        text: '🔗 I was clipped from the web. Click my link icon to go back to the source.',
+        url: 'https://example.com/source',
+        title: 'Source Example',
+        favicon: 'https://www.google.com/s2/favicons?domain=wikipedia.org',
+        createdAt: new Date().toISOString(),
+        tags: [],
+        color: '#dbeafe', // Blue
+    },
+    {
+        id: 'seed-3',
+        text: '📂 Drag me onto a Document to organize me!',
+        url: 'https://example.com/organize',
+        title: 'Organization Tip',
+        favicon: 'https://www.google.com/s2/favicons?domain=notion.so',
+        createdAt: new Date().toISOString(),
+        tags: [],
+        color: '#dcfce7', // Green
+    }
+];
+
+const SEED_DOCUMENTS: DocumentType[] = [
+    {
+        id: 'doc-1',
+        title: 'My First Project',
+        url: '',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        content: '👋 Welcome to Highlight! I\'m a sticky note. You can drag me around.\n\n🔗 I was clipped from the web. Click my link icon to go back to the source.'
+    },
+    {
+        id: 'doc-2',
+        title: 'Reading List',
+        url: '',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        content: ''
+    }
+];
+
 export class FileSystemService {
     private dirHandle: FileSystemDirectoryHandle | null = null;
     constructor() {
         // Lazy init
+        // Ensure manual seeding happens only once per session if needed, but checking file existence is better
     }
 
     private _dbPromise: Promise<IDBPDatabase<HighlightDB>> | null = null;
@@ -94,6 +147,8 @@ export class FileSystemService {
             await db.put(STORE_NAME, 'folder', STORAGE_MODE_KEY);
             this.useInternalStorage = false;
 
+            await this.seedData();
+
         } catch (error) {
             if ((error as Error).name === 'AbortError') {
                 throw new Error('User cancelled folder selection');
@@ -108,6 +163,34 @@ export class FileSystemService {
         const db = await this.dbPromise;
         await db.delete(STORE_NAME, HANDLE_KEY);
         await db.put(STORE_NAME, 'internal', STORAGE_MODE_KEY);
+
+        await this.seedData();
+    }
+
+    private async seedData(): Promise<void> {
+        try {
+            // Check if highlights exist
+            const highlights = await this.readJsonFile<HighlightType[]>(HIGHLIGHTS_FILE, null as any);
+            if (!highlights) {
+                console.log('Seeding initial highlights...');
+                // Add seed highlights to the first document as an example?
+                // User said "Document 1 contains a few example notes".
+                const seededHighlights = SEED_HIGHLIGHTS.map(h => ({
+                    ...h,
+                    documentId: h.id === 'seed-3' ? null : 'doc-1' // Put first two in doc-1, keep 3rd unassigned to drag
+                }));
+                await this.writeJsonFile(HIGHLIGHTS_FILE, seededHighlights);
+            }
+
+            // Check if documents exist
+            const docs = await this.readJsonFile<DocumentType[]>(DOCUMENTS_FILE, null as any);
+            if (!docs) {
+                console.log('Seeding initial documents...');
+                await this.writeJsonFile(DOCUMENTS_FILE, SEED_DOCUMENTS);
+            }
+        } catch (e) {
+            console.error('Error seeding data:', e);
+        }
     }
 
     async reconnect(): Promise<boolean> {
@@ -221,13 +304,28 @@ export class FileSystemService {
         if (!this.dirHandle) throw new Error('Not connected to file system');
 
         try {
+            // Check if file exists first
+            // getFileHandle will throw if not found unless {create:true}
+            // We want to FAIL if not found so we know to seed
+            // But usually we want create:true.
+            // Let's rely on detection:
+            // If we are calling from seedData, defaultValue is explicitly null to detect absence.
+
+            // Wait, getFileHandle(create: true) creates an empty file? Yes.
+            // If it creates an empty file, logic sees "" -> JSON.parse fails or returns default.
+
+            // To detect "Fresh Install", we should try to open WITHOUT create: true first?
+            // No, simpler: Read file. If content is empty string OR file missing (caught error), return default.
+            // If default is null, we know it's missing.
+
             const fileHandle = await this.dirHandle.getFileHandle(filename, { create: true });
             const file = await fileHandle.getFile();
             const text = await file.text();
             if (!text.trim()) return defaultValue;
             return JSON.parse(text) as T;
         } catch (error) {
-            console.error(`Error reading ${filename}:`, error);
+            // console.error(`Error reading ${filename}:`, error);
+            // If file not found (and we didn't create), or other error
             return defaultValue;
         }
     }
