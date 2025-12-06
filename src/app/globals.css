@@ -164,3 +164,37 @@ a {
   box-shadow: var(--shadow-md);
   transform: translateY(-2px);
 }
+
+@keyframes highlight-reveal {
+  0% {
+    background-size: 0% 100%;
+  }
+
+  100% {
+    background-size: 100% 100%;
+  }
+}
+
+/* Semantic Highlight Style (Permanent) */
+.highlight-marker {
+  /* Default to yellow if no variable provided */
+  --highlight-color: #fef3c7;
+  background-image: linear-gradient(120deg, var(--highlight-color) 0%, var(--highlight-color) 100%);
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+  background-position: 0 0;
+  padding: 2px 0;
+  border-radius: 2px;
+}
+
+[data-theme='dark'] .highlight-marker {
+  --highlight-color: #583e08;
+  color: #fff;
+}
+
+/* Entrance Animation (Temporary) */
+.highlight-animate {
+  animation: highlight-reveal 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  background-size: 0% 100%;
+  /* Start state for animation */
+}

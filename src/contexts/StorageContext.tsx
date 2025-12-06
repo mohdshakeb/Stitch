@@ -9,6 +9,7 @@ interface StorageContextType {
     highlights: HighlightType[];
     documents: DocumentType[];
     connect: () => Promise<void>;
+    disconnect: () => Promise<void>;
     connectInternal: () => Promise<void>;
     addHighlight: (highlight: HighlightType) => Promise<void>;
     removeHighlight: (id: string) => Promise<void>;
@@ -16,6 +17,7 @@ interface StorageContextType {
     removeDocument: (id: string) => Promise<void>;
     updateDocument: (id: string, updates: Partial<DocumentType>) => Promise<void>;
     refreshData: () => Promise<void>;
+    exportData: () => Promise<void>;
     extensionId: string | null;
     isExtensionAvailable: boolean;
 }
@@ -144,9 +146,23 @@ export function StorageProvider({ children }: { children: React.ReactNode }) {
             await refreshData();
         } catch (error) {
             console.error('Connection failed:', error);
-            alert((error as Error).message);
+            // Don't alert for user cancellation
+            if ((error as Error).message !== 'User cancelled folder selection') {
+                alert((error as Error).message);
+            }
         } finally {
             setIsConnecting(false);
+        }
+    };
+
+    const disconnect = async () => {
+        try {
+            await fileSystemService.disconnect();
+            setIsConnected(false);
+            setHighlights([]);
+            setDocuments([]);
+        } catch (error) {
+            console.error('Disconnect failed:', error);
         }
     };
 
@@ -174,8 +190,17 @@ export function StorageProvider({ children }: { children: React.ReactNode }) {
     };
 
     const addDocument = async (doc: DocumentType) => {
-        await fileSystemService.saveDocument(doc);
-        await refreshData();
+        try {
+            await fileSystemService.saveDocument(doc);
+            await refreshData();
+        } catch (error) {
+            console.error('Failed to save document:', error);
+            if ((error as Error).name === 'NotFoundError') {
+                // Critical failure - handle is likely stale
+                alert('Connection to folder lost. Please reconnect.');
+                await disconnect();
+            }
+        }
     };
 
     const removeDocument = async (id: string) => {
@@ -192,12 +217,31 @@ export function StorageProvider({ children }: { children: React.ReactNode }) {
         }
     };
 
+    const exportData = async () => {
+        try {
+            const data = await fileSystemService.exportData();
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `highlight-export-${new Date().toISOString().split('T')[0]}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        } catch (error) {
+            console.error('Export failed:', error);
+            alert('Failed to export data');
+        }
+    };
+
     return (
         <StorageContext.Provider
             value={{
                 isConnected,
                 isConnecting,
                 connect,
+                disconnect,
                 connectInternal,
                 highlights,
                 documents,
@@ -207,6 +251,7 @@ export function StorageProvider({ children }: { children: React.ReactNode }) {
                 addDocument,
                 removeDocument,
                 updateDocument,
+                exportData,
                 extensionId,
                 isExtensionAvailable
             }}

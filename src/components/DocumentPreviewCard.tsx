@@ -65,69 +65,27 @@ export default function DocumentPreviewCard({
         }
     };
 
-    const stripHtml = (html: string) => {
-        if (!html) return '';
-
-        // Replace block-level tags with newlines to preserve spacing
-        let htmlWithNewlines = html
-            .replace(/<\/p>/gi, '\n') // Paragraphs get single newline (double spacing handled by margin usually, but here we want compact)
-            .replace(/<br\s*\/?>/gi, '\n')
-            .replace(/<\/div>/gi, '\n')
-            .replace(/<\/h[1-6]>/gi, '\n')
-            .replace(/<\/li>/gi, '\n');
-
-        // Create a temporary DOM element to extract text content
-        let text = '';
-        if (typeof window !== 'undefined') {
-            const tmp = document.createElement('DIV');
-            tmp.innerHTML = htmlWithNewlines;
-            text = tmp.textContent || tmp.innerText || '';
-        } else {
-            text = htmlWithNewlines.replace(/<[^>]*>?/gm, '');
-        }
-
-        // Collapse multiple newlines into max 2 to avoid huge gaps
-        return text.replace(/\n\s*\n\s*\n/g, '\n\n').trim();
-    };
-
     const renderContent = () => {
-        // Always render actual document content (includes highlights and user text)
-        const text = stripHtml(doc.content);
-        if (!text) {
-            return <span style={{ fontStyle: 'italic', opacity: 0.5 }}>Drop highlights here or start writing...</span>;
+        // Render sanitized content (in this case, raw from DB as it's local) 
+        // We use CSS line-clamp to handle truncation now
+        if (!doc.content) {
+            return <div style={{ fontStyle: 'italic', opacity: 0.5 }}>Drop highlights here or start writing...</div>;
         }
 
-        const lines = text.split('\n');
-        const LINE_THRESHOLD = 20;
-        const CHAR_THRESHOLD = 1000;
-
-        if (lines.length > LINE_THRESHOLD) {
-            const topLines = lines.slice(0, 10).join('\n');
-            const bottomLines = lines.slice(-5).join('\n');
-            return (
-                <>
-                    <div>{topLines}</div>
-                    <div style={{ textAlign: 'center', color: 'hsl(var(--muted))', margin: '4px 0' }}>...</div>
-                    <div>{bottomLines}</div>
-                </>
-            );
-        }
-
-        if (text.length > CHAR_THRESHOLD) {
-            const half = 400;
-            const firstPart = text.slice(0, half).replace(/\s\S*$/, '');
-            const lastPart = text.slice(-half).replace(/^\S*\s/, '');
-
-            return (
-                <>
-                    <div>{firstPart}</div>
-                    <div style={{ textAlign: 'center', color: 'hsl(var(--muted))', margin: '4px 0' }}>...</div>
-                    <div>{lastPart}</div>
-                </>
-            );
-        }
-
-        return text;
+        return (
+            <div
+                dangerouslySetInnerHTML={{ __html: doc.content }}
+                className="document-preview-content"
+                style={{
+                    display: '-webkit-box',
+                    WebkitLineClamp: 12, // Show more content since we have space
+                    WebkitBoxOrient: 'vertical',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    wordBreak: 'break-word',
+                }}
+            />
+        );
     };
 
     return (

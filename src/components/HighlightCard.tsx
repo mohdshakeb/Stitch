@@ -18,6 +18,7 @@ interface HighlightProps {
     onDelete?: (id: string, e: React.MouseEvent) => void;
     onMove?: (documentId: string | null) => void;
     activeDocId?: string | null;
+    color?: string | null;
 }
 
 export default function HighlightCard({
@@ -32,7 +33,8 @@ export default function HighlightCard({
     documents = [],
     onDelete,
     onMove,
-    activeDocId
+    activeDocId,
+    color
 }: HighlightProps) {
     const [showActions, setShowActions] = useState(false);
     const [showMoveMenu, setShowMoveMenu] = useState(false);
@@ -235,6 +237,8 @@ export default function HighlightCard({
         );
     };
 
+    const bg = color || styles.color;
+
     return (
         <>
             <div
@@ -244,7 +248,7 @@ export default function HighlightCard({
                 onMouseLeave={() => setShowActions(false)}
                 style={{
                     position: 'relative',
-                    backgroundColor: styles.color,
+                    backgroundColor: bg,
                     border: 'none',
                     borderRadius: '2px',
                     boxShadow: '2px 2px 5px rgba(0,0,0,0.1)',

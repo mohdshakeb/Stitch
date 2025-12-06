@@ -1,6 +1,7 @@
 'use client';
 
 import { useEditor, EditorContent, BubbleMenu } from '@tiptap/react';
+import { Mark, mergeAttributes } from '@tiptap/core';
 import StarterKit from '@tiptap/starter-kit';
 import Placeholder from '@tiptap/extension-placeholder';
 import BubbleMenuExtension from '@tiptap/extension-bubble-menu';
@@ -14,7 +15,58 @@ interface DocumentEditorProps {
 }
 
 
+
+
+const HighlightMark = Mark.create({
+    name: 'highlightMarker',
+
+    addOptions() {
+        return {
+            HTMLAttributes: {},
+        }
+    },
+
+    inclusive: false,
+
+    parseHTML() {
+        return [
+            {
+                tag: 'span.highlight-marker',
+                getAttrs: (node: string | HTMLElement) => {
+                    if (typeof node === 'string') return {};
+                    const element = node as HTMLElement;
+                    const style = element.getAttribute('style');
+                    return { style };
+                }
+            },
+        ]
+    },
+
+    renderHTML({ HTMLAttributes }) {
+        // @ts-ignore
+        return ['span', mergeAttributes(this.options.HTMLAttributes, HTMLAttributes, { class: 'highlight-marker' }), 0]
+    },
+
+    addAttributes() {
+        return {
+            style: {
+                default: null,
+                parseHTML: (element: HTMLElement) => element.getAttribute('style'),
+                renderHTML: (attributes: Record<string, any>) => {
+                    if (!attributes.style) {
+                        return {}
+                    }
+                    return {
+                        style: attributes.style,
+                    }
+                },
+            },
+        }
+    },
+});
+
 export default function DocumentEditor({ documentId, initialTitle, initialContent }: DocumentEditorProps) {
+    // ... existing state ...
     const { updateDocument } = useStorage();
     const [title, setTitle] = useState(initialTitle);
     const [isSaving, setIsSaving] = useState(false);
@@ -40,6 +92,7 @@ export default function DocumentEditor({ documentId, initialTitle, initialConten
                 placeholder: 'Start writing...',
             }),
             BubbleMenuExtension,
+            HighlightMark,
         ],
         content: initialContent, // Tiptap handles HTML content
         editorProps: {
@@ -60,6 +113,7 @@ export default function DocumentEditor({ documentId, initialTitle, initialConten
         },
     });
 
+    // ... sync effects ...
     // Sync title changes
     useEffect(() => {
         if (saveTimeoutRef.current) {
@@ -212,6 +266,15 @@ export default function DocumentEditor({ documentId, initialTitle, initialConten
             <EditorContent editor={editor} />
 
             <style jsx global>{`
+                /* Hide highlights in the editor as per user request */
+                .ProseMirror .highlight-marker {
+                    background-color: transparent !important;
+                    background-image: none !important;
+                    color: inherit !important;
+                    padding: 0 !important;
+                    /* We still keep the class/element for data persistence, just invisible styling */
+                }
+                
                 .ProseMirror p.is-editor-empty:first-child::before {
                     color: hsl(var(--muted));
                     content: attr(data-placeholder);

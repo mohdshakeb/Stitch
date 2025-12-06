@@ -204,6 +204,7 @@ export class FileSystemService {
             // If user previously chose internal storage, restore that
             if (storageMode === 'internal') {
                 this.useInternalStorage = true;
+                await this.seedData();
                 return true;
             }
 
@@ -217,6 +218,7 @@ export class FileSystemService {
                     if (permission) {
                         this.dirHandle = handle;
                         this.useInternalStorage = false;
+                        await this.seedData();
                         return true;
                     }
                 }
@@ -228,6 +230,13 @@ export class FileSystemService {
             console.error('Error reconnecting:', error);
         }
         return false;
+    }
+
+    async disconnect(): Promise<void> {
+        this.dirHandle = null;
+        this.useInternalStorage = false;
+        const db = await this.dbPromise;
+        await db.clear(STORE_NAME); // Clear saved handles/preferences
     }
 
     async verifyPermission(fileHandle: FileSystemHandle, readWrite: boolean, force: boolean = true): Promise<boolean> {
@@ -247,6 +256,12 @@ export class FileSystemService {
 
     isConnected(): boolean {
         return this.dirHandle !== null || this.useInternalStorage;
+    }
+
+    async exportData(): Promise<AppData> {
+        const highlights = await this.getHighlights();
+        const documents = await this.getDocuments();
+        return { highlights, documents };
     }
 
     isInternal(): boolean {
