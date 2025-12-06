@@ -16,6 +16,8 @@ interface StorageContextType {
     removeDocument: (id: string) => Promise<void>;
     updateDocument: (id: string, updates: Partial<DocumentType>) => Promise<void>;
     refreshData: () => Promise<void>;
+    extensionId: string | null;
+    isExtensionAvailable: boolean;
 }
 
 const StorageContext = createContext<StorageContextType | undefined>(undefined);
@@ -26,6 +28,7 @@ export function StorageProvider({ children }: { children: React.ReactNode }) {
     const [highlights, setHighlights] = useState<HighlightType[]>([]);
     const [documents, setDocuments] = useState<DocumentType[]>([]);
     const [extensionId, setExtensionId] = useState<string | null>(process.env.NEXT_PUBLIC_EXTENSION_ID || null);
+    const [isExtensionAvailable, setIsExtensionAvailable] = useState(false);
 
     const refreshData = useCallback(async () => {
         if (!fileSystemService.isConnected()) return;
@@ -40,8 +43,11 @@ export function StorageProvider({ children }: { children: React.ReactNode }) {
                                 if (chrome.runtime.lastError) {
                                     // Don't reject, just resolve null - legitimate case if extension not running
                                     console.log('Extension check:', chrome.runtime.lastError.message);
+                                    setIsExtensionAvailable(false);
                                     resolve(null);
                                 } else {
+                                    console.log('Extension check success. Response:', res);
+                                    setIsExtensionAvailable(true);
                                     resolve(res);
                                 }
                             });
@@ -65,7 +71,11 @@ export function StorageProvider({ children }: { children: React.ReactNode }) {
                     }
                 } catch (e) {
                     console.log('Extension sync skipped (not connected).');
+                    // setIsExtensionAvailable(false); // Optional: we might not want to set false just on catch, but probably safe
                 }
+            } else {
+                // No ID or no runtime
+                setIsExtensionAvailable(false);
             }
 
             // 2. Load from File System
@@ -86,6 +96,7 @@ export function StorageProvider({ children }: { children: React.ReactNode }) {
             if (event.data?.type === 'HIGHLIGHT_EXTENSION_ID' && event.data?.id) {
                 console.log('Extension ID discovered:', event.data.id);
                 setExtensionId(event.data.id);
+                setIsExtensionAvailable(true);
             }
         };
         window.addEventListener('message', handleMessage);
@@ -195,7 +206,9 @@ export function StorageProvider({ children }: { children: React.ReactNode }) {
                 removeHighlight,
                 addDocument,
                 removeDocument,
-                updateDocument
+                updateDocument,
+                extensionId,
+                isExtensionAvailable
             }}
         >
             {children}

@@ -13,6 +13,7 @@ interface HighlightProps {
     favicon?: string | null;
     createdAt: string;
     documentId?: string | null;
+    documentIds?: string[];
     documents?: { id: string; title: string }[];
     onDelete?: (id: string, e: React.MouseEvent) => void;
     onMove?: (documentId: string | null) => void;
@@ -27,6 +28,7 @@ export default function HighlightCard({
     favicon,
     createdAt,
     documentId,
+    documentIds,
     documents = [],
     onDelete,
     onMove,
@@ -336,7 +338,7 @@ export default function HighlightCard({
                 </div>
 
                 {/* Assignment Indicator */}
-                {documentId && (
+                {(documentId || (documentIds && documentIds.length > 0)) && (
                     <div style={{
                         marginTop: '8px',
                         paddingTop: '8px',
@@ -348,19 +350,22 @@ export default function HighlightCard({
                         alignItems: 'center',
                         gap: '4px',
                     }}>
-                        {documentId === activeDocId ? (
-                            <>
-                                <i className="ri-check-double-line"></i>
-                                <span>Added to this document</span>
-                            </>
-                        ) : (
-                            <>
-                                <i className="ri-check-line"></i>
-                                <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                    Added to {documents.find(d => d.id === documentId)?.title || 'Document'}
-                                </span>
-                            </>
-                        )}
+                        <i className="ri-check-line"></i>
+                        <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            Added to {(() => {
+                                const ids = documentIds && documentIds.length > 0 ? documentIds : (documentId ? [documentId] : []);
+                                const lastId = ids[ids.length - 1];
+                                const doc = documents.find(d => d.id === lastId);
+                                const extra = ids.length - 1;
+
+                                return (
+                                    <>
+                                        <span style={{ fontWeight: 600 }}>{doc?.title || 'Document'}</span>
+                                        {extra > 0 && <span style={{ opacity: 0.7, marginLeft: '4px' }}>+{extra}</span>}
+                                    </>
+                                );
+                            })()}
+                        </span>
                     </div>
                 )}
             </div>

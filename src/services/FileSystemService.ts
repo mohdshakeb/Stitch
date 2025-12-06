@@ -9,7 +9,8 @@ export interface HighlightType {
     favicon?: string;
     createdAt: string;
     tags: string[];
-    documentId?: string | null;
+    documentId?: string | null; // Deprecated, use documentIds
+    documentIds?: string[];
     color?: string;
     note?: string;
 }

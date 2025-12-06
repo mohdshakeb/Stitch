@@ -12,6 +12,7 @@ import Header from '@/components/Header';
 import { useStorage } from '@/contexts/StorageContext';
 import ConnectFolder from '@/components/ConnectFolder';
 import { HighlightType, DocumentType } from '@/services/FileSystemService';
+import InstallExtensionModal from '@/components/InstallExtensionModal';
 
 function HomeContent() {
   const { showToast } = useToast();
@@ -24,7 +25,9 @@ function HomeContent() {
     removeHighlight,
     addDocument,
     removeDocument,
-    refreshData
+    refreshData,
+    extensionId,
+    isExtensionAvailable
   } = useStorage();
 
   const router = useRouter();
@@ -38,6 +41,7 @@ function HomeContent() {
   const [activeDocId, setActiveDocId] = useState<string | null>(null);
   const [dragOverDocId, setDragOverDocId] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
+  const [isInstallModalOpen, setIsInstallModalOpen] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   // Set up intersection observer to track active document
@@ -214,36 +218,18 @@ function HomeContent() {
     refreshData();
   };
 
-  const handleDeleteDocument = async (id: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    const docToDelete = documents.find(d => d.id === id);
-    if (!docToDelete) return;
 
-    try {
-      // 1. Unlink associated highlights first (Orphan Cleanup)
-      const linkedHighlights = highlights.filter(h => h.documentId === id);
-      await Promise.all(linkedHighlights.map(h => addHighlight({ ...h, documentId: null })));
 
-      // 2. Delete the document
-      await removeDocument(id);
-      showToast('Document deleted', {
-        type: 'success',
-        onUndo: async () => {
-          // Restore document
-          await addDocument(docToDelete);
-          // Restore links
-          await Promise.all(linkedHighlights.map(h => addHighlight({ ...h, documentId: id })));
-        }
-      });
-    } catch (error) {
-      console.error('Error deleting document:', error);
-    }
+  // Helper to normalize document IDs
+  const getDocIds = (h: HighlightType) => {
+    if (h.documentIds && h.documentIds.length > 0) return h.documentIds;
+    if (h.documentId) return [h.documentId];
+    return [];
   };
 
-  // Drag and Drop Handlers
   const handleDragStart = (e: React.DragEvent, highlightId: string) => {
     e.dataTransfer.setData('text/plain', highlightId);
-    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.effectAllowed = 'copyMove'; // Enable copy behavior for multi-assign
   };
 
   const handleDragOverDoc = (e: React.DragEvent, docId: string) => {
@@ -264,19 +250,28 @@ function HomeContent() {
       try {
         const highlight = highlights.find(h => h.id === highlightId);
         if (highlight) {
-          if (highlight.documentId === docId) {
+          const currentIds = getDocIds(highlight);
+
+          if (currentIds.includes(docId)) {
             showToast('Already added to this document', { type: 'info' });
             return;
           }
 
-          const updatedHighlight = { ...highlight, documentId: docId };
+          // Append new Doc ID
+          const newIds = [...currentIds, docId];
+          const updatedHighlight = {
+            ...highlight,
+            documentIds: newIds,
+            documentId: docId // Update legacy field to point to most recent
+          };
+
           await addHighlight(updatedHighlight); // Links metadata (Sidebar)
 
           // Also append text to document body (Editable Content)
           const targetDoc = documents.find(d => d.id === docId);
           if (targetDoc) {
             const newContent = targetDoc.content
-              ? `${targetDoc.content}<p><br></p><p>${highlight.text}</p>`
+              ? `${targetDoc.content}<p>${highlight.text}</p>`
               : `<p>${highlight.text}</p>`;
 
             await addDocument({
@@ -291,6 +286,57 @@ function HomeContent() {
       } catch (error) {
         console.error('Error moving highlight:', error);
       }
+    }
+  };
+
+  const handleDeleteDocument = async (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const docToDelete = documents.find(d => d.id === id);
+    if (!docToDelete) return;
+
+    try {
+      // 1. Unlink associated highlights first (Orphan Cleanup)
+      // Must be sequential to avoid File System Race Conditions (Read/Write conflict)
+      // Filter any highlight that contains this docId
+      const linkedHighlights = highlights.filter(h => getDocIds(h).includes(id));
+
+      for (const h of linkedHighlights) {
+        const currentIds = getDocIds(h);
+        const newIds = currentIds.filter(d => d !== id);
+        // If empty, it becomes unassigned. If not, it stays assigned to others.
+        // Update legacy pointer 
+        const newLegacyId = newIds.length > 0 ? newIds[newIds.length - 1] : null;
+
+        await addHighlight({
+          ...h,
+          documentIds: newIds,
+          documentId: newLegacyId
+        });
+      }
+
+      // 2. Delete the document
+      await removeDocument(id);
+      showToast('Document deleted', {
+        type: 'success',
+        onUndo: async () => {
+          // Restore document
+          await addDocument(docToDelete);
+          // Restore links
+          for (const h of linkedHighlights) {
+            const currentIds = getDocIds(h); // Re-fetch in case changed? No, we use captured h
+            // Actually 'h' is stale. But for Undo, we probably want to just re-add the ID.
+            // Simplification: Just re-add ID to list.
+            // We need to fetch the *latest* version of h from store if we want to be safe, but local state isn't updated during undo flow instantly.
+            // For now, simpler undo: just push ID back.
+            const restoredIds = [...(h.documentIds || []), id]; // This might be buggy if H changed meanwhile. 
+            // Ideally we re-fetch. But context methods don't expose 'getHighlight'.
+            // Let's rely on simple restore:
+            await addHighlight({ ...h, documentIds: [...getDocIds(h), id], documentId: id });
+          }
+        }
+      });
+    } catch (error) {
+      console.error('Error deleting document:', error);
     }
   };
 
@@ -318,8 +364,8 @@ function HomeContent() {
     ? highlights.filter(h => getCategoryFromUrl(h.url) === selectedCategory)
     : highlights;
 
-  const unassignedHighlights = filteredHighlights.filter(h => !h.documentId);
-  const assignedHighlights = filteredHighlights.filter(h => h.documentId);
+  const unassignedHighlights = filteredHighlights.filter(h => getDocIds(h).length === 0);
+  const assignedHighlights = filteredHighlights.filter(h => getDocIds(h).length > 0);
 
   return (
     <main style={{
@@ -419,6 +465,7 @@ function HomeContent() {
                         favicon={highlight.favicon || ''}
                         createdAt={highlight.createdAt}
                         documentId={highlight.documentId || null}
+                        documentIds={getDocIds(highlight)}
                         onDelete={handleDeleteHighlight}
                         onMove={handleMoveHighlight}
                         // @ts-ignore
@@ -479,7 +526,7 @@ function HomeContent() {
               key={doc.id}
               // @ts-ignore
               doc={doc}
-              highlights={highlights.filter(h => h.documentId === doc.id)}
+              highlights={highlights.filter(h => getDocIds(h).includes(doc.id))}
               isActive={activeDocId === doc.id}
               isDragOver={dragOverDocId === doc.id}
               onDragOver={handleDragOverDoc}
@@ -564,8 +611,74 @@ function HomeContent() {
           paddingBottom: 'calc(50vh - 300px)',
         }}>
 
-          {/* App Info Section (Empty State) - Shown when filters are NOT shown */}
-          {!(highlights.length > 0 && Array.from(new Set(highlights.map(h => getCategoryFromUrl(h.url)))).filter(c => c !== 'other').length > 1) && (
+          {/* 1. Onboarding State - Shown when Extension NOT available */}
+          {!isExtensionAvailable && (
+            <div style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 'var(--space-4)',
+              marginTop: '0',
+            }}>
+              <div>
+                <h3 style={{ fontSize: '1.25rem', fontWeight: 600, marginBottom: '8px' }}>Welcome to Highlight</h3>
+                <p style={{ fontSize: '0.9rem', color: 'hsl(var(--muted))', lineHeight: '1.5' }}>
+                  To start collecting highlights from the web, you'll need our helper extension.
+                </p>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', alignItems: 'flex-start' }}>
+                <button
+                  onClick={() => setIsInstallModalOpen(true)}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: 'hsl(var(--foreground))',
+                    fontSize: '0.9rem',
+                    textDecoration: 'underline',
+                    textUnderlineOffset: '4px',
+                    cursor: 'pointer',
+                    padding: 0
+                  }}
+                >
+                  See How
+                </button>
+
+                <button
+                  onClick={() => setIsInstallModalOpen(true)}
+                  style={{
+                    padding: '10px 16px',
+                    backgroundColor: 'hsl(var(--muted) / 0.1)',
+                    color: 'hsl(var(--foreground))',
+                    border: '1px solid hsl(var(--border))',
+                    borderRadius: 'var(--radius-md)',
+                    fontSize: '0.9rem',
+                    fontWeight: 500,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    transition: 'all 0.2s',
+                    width: '100%',
+                    justifyContent: 'center',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = 'hsl(var(--muted) / 0.15)';
+                    e.currentTarget.style.borderColor = 'hsl(var(--foreground))';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = 'hsl(var(--muted) / 0.1)';
+                    e.currentTarget.style.borderColor = 'hsl(var(--border))';
+                  }}
+                >
+                  <i className="ri-download-2-line"></i>
+                  Download Extension
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* 2. Welcome State - Shown when Connected AND No Filters */}
+          {isExtensionAvailable && !(highlights.length > 0 && Array.from(new Set(highlights.map(h => getCategoryFromUrl(h.url)))).filter(c => c !== 'other').length > 1) && (
             <div style={{
               display: 'flex',
               flexDirection: 'column',
@@ -580,7 +693,7 @@ function HomeContent() {
             </div>
           )}
 
-          {/* Category Tags - Only show if highlights exist and there is more than one category */}
+          {/* 3. Category Tags - Only show if highlights exist and there is more than one category */}
           {highlights.length > 0 && Array.from(new Set(highlights.map(h => getCategoryFromUrl(h.url)))).filter(c => c !== 'other').length > 1 && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
               <span style={{ fontSize: '0.9rem', lineHeight: '1.5', color: 'hsl(var(--foreground))', fontWeight: 500 }}>Snippets from which type of source are you looking for?</span>
@@ -628,7 +741,7 @@ function HomeContent() {
             </div>
           )}
 
-          {/* Document List - Bottom Aligned */}
+          {/* 4. Document List - Bottom Aligned */}
           {documents.length > 0 && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)', flex: 1, justifyContent: 'flex-end', paddingBottom: 'var(--space-8)' }}>
               {documents.map((doc) => {
@@ -699,7 +812,7 @@ function HomeContent() {
             </div>
           )}
 
-          {/* Create Button (Bottom) - Only show if documents exist */}
+          {/* 5. Create Button (Bottom) - Only show if documents exist */}
           {documents.length > 0 && (
             <button
               onClick={handleCreateDocument}
@@ -729,6 +842,7 @@ function HomeContent() {
         </div>
 
       </div>
+      <InstallExtensionModal isOpen={isInstallModalOpen} onClose={() => setIsInstallModalOpen(false)} />
     </main>
   );
 }

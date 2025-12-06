@@ -91,40 +91,7 @@ export default function DocumentPreviewCard({
     };
 
     const renderContent = () => {
-        // If we have highlights, show them as preview
-        if (highlights.length > 0) {
-            return (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                    {highlights.slice(0, 5).map((h, i) => (
-                        <div key={h.id} style={{
-                            padding: '0',
-                            backgroundColor: 'transparent',
-                            borderRadius: '0',
-                            fontSize: '0.9rem',
-                            color: 'hsl(var(--foreground))',
-                            lineHeight: '1.6',
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            display: '-webkit-box',
-                            WebkitLineClamp: 3,
-                            WebkitBoxOrient: 'vertical' as const,
-                            position: 'relative',
-                            paddingLeft: '16px', // Indent for bullet
-                        }}>
-                            <span style={{ position: 'absolute', left: 0, top: 0 }}>•</span>
-                            "{h.text.substring(0, 150)}{h.text.length > 150 ? '...' : ''}"
-                        </div>
-                    ))}
-                    {highlights.length > 5 && (
-                        <div style={{ fontSize: '0.75rem', color: 'hsl(var(--muted))' }}>
-                            +{highlights.length - 5} more highlights
-                        </div>
-                    )}
-                </div>
-            );
-        }
-
-        // Fall back to doc.content if no highlights
+        // Always render actual document content (includes highlights and user text)
         const text = stripHtml(doc.content);
         if (!text) {
             return <span style={{ fontStyle: 'italic', opacity: 0.5 }}>Drop highlights here or start writing...</span>;

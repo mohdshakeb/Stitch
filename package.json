@@ -4,9 +4,10 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "npm run bundle:extension && next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "bundle:extension": "node scripts/bundle-extension.js"
   },
   "dependencies": {
     "@tiptap/extension-bubble-menu": "^2.10.3",
@@ -27,6 +28,7 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "archiver": "^7.0.1",
     "autoprefixer": "^10.4.22",
     "eslint": "^9",
     "eslint-config-next": "16.0.3",
