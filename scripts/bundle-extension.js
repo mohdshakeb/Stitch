@@ -2,7 +2,7 @@ const fs = require('fs');
 const path = require('path');
 const archiver = require('archiver');
 
-const EXTENSION_DIR = path.join(__dirname, '../../extension');
+const EXTENSION_DIR = path.join(__dirname, '../extension');
 const OUTPUT_DIR = path.join(__dirname, '../public');
 const OUTPUT_FILE = path.join(OUTPUT_DIR, 'highlight-extension.zip');
 

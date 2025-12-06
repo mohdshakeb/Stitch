@@ -508,7 +508,7 @@ function HomeContent() {
           ref={scrollContainerRef}
           className="document-scroll-container"
           style={{
-            flex: 1,
+            flex: 0.8,
             height: '100vh',
             overflowY: 'auto',
             scrollSnapType: 'y mandatory',
