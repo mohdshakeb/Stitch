@@ -175,6 +175,11 @@ function HomeContent() {
 
           // Also append text to document body (Editable Content)
           const targetDoc = documents.find(d => d.id === docId);
+
+          if (!targetDoc) {
+            console.error('Target document not found');
+            return;
+          }
           const color = highlight.color || '#fef3c7';
           const newContent = targetDoc.content
             ? `${targetDoc.content}<p><span class="highlight-marker highlight-animate" style="--highlight-color: ${color}">${highlight.text}</span></p>`
