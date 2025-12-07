@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useToast } from '@/contexts/ToastContext';
 import { useStorage } from '@/contexts/StorageContext';
 import { HighlightType, DocumentType } from '@/services/FileSystemService';
-import { Category } from '@/utils/categories';
+import { Category, getCategoryStyles } from '@/utils/categories';
 
 // Components
 import ConnectFolder from '@/components/ConnectFolder';
@@ -180,7 +180,7 @@ function HomeContent() {
             console.error('Target document not found');
             return;
           }
-          const color = highlight.color || '#fef3c7';
+          const color = highlight.color || getCategoryStyles(highlight.url).color;
           const newContent = targetDoc.content
             ? `${targetDoc.content}<p><span class="highlight-marker highlight-animate" style="--highlight-color: ${color}">${highlight.text}</span></p>`
             : `<p><span class="highlight-marker highlight-animate" style="--highlight-color: ${color}">${highlight.text}</span></p>`;

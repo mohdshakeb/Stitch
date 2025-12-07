@@ -59,8 +59,8 @@ export function getCategoryFromUrl(urlStr: string): Category {
             return 'academic';
         }
 
-        // Article/News sites (Specific list or patterns if needed, otherwise fall to other)
-        if (['medium.com', 'substack.com', 'nytimes.com', 'bbc.com', 'cnn.com', 'dev.to'].some(d => hostname.includes(d))) {
+        // Article/News sites (Expanded list for common case studies/blogs)
+        if (['medium.com', 'substack.com', 'nytimes.com', 'bbc.com', 'cnn.com', 'dev.to', 'towardsdatascience.com', 'uxdesign.cc', 'uxplanet.org', 'hackernoon.com', 'hashnode.com', 'freecodecamp.org', 'smashingmagazine.com'].some(d => hostname.includes(d))) {
             return 'article';
         }
 
