@@ -49,9 +49,9 @@ export function StorageProvider({ children }: { children: React.ReactNode }) {
                 // Sent protocol message to extension to notify of data update
                 // The actual payload logic was lost, but usually we just notify to re-fetch
                 chrome.runtime.sendMessage(extensionId, { type: 'HIGHLIGHTS_UPDATED' });
-            } else {
-                setIsExtensionAvailable(false);
             }
+            // Do NOT aggressively set to false, as chrome.runtime might be missing 
+            // in standard context even if extension is installed and communicating via window.postMessage
 
             // 2. Load from File System
             const h = await fileSystemService.getHighlights();
