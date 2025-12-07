@@ -165,13 +165,15 @@ a {
   transform: translateY(-2px);
 }
 
-@keyframes highlight-reveal {
+@keyframes highlight-swipe {
   0% {
-    background-size: 0% 100%;
+    background-position: 110% 0;
+    background-size: 200% 100%;
   }
 
   100% {
-    background-size: 100% 100%;
+    background-position: 0 0;
+    background-size: 200% 100%;
   }
 }
 
@@ -179,11 +181,14 @@ a {
 .highlight-marker {
   /* Default to yellow if no variable provided */
   --highlight-color: #fef3c7;
-  background-image: linear-gradient(120deg, var(--highlight-color) 0%, var(--highlight-color) 100%);
+
+  /* Sliding Gradient Technique */
+  /* 200% width: 50% color (left), 50% transparent (right) */
+  background-image: linear-gradient(120deg, var(--highlight-color) 50%, transparent 50%);
   background-repeat: no-repeat;
-  background-size: 100% 100%;
+  background-size: 200% 100%;
   background-position: 0 0;
-  padding: 2px 0;
+
   border-radius: 2px;
 }
 
@@ -194,7 +199,8 @@ a {
 
 /* Entrance Animation (Temporary) */
 .highlight-animate {
-  animation: highlight-reveal 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
-  background-size: 0% 100%;
-  /* Start state for animation */
+  animation: highlight-swipe 1s ease forwards;
+  background-image: linear-gradient(120deg, var(--highlight-color) 50%, transparent 50%);
+  background-size: 200% 100%;
+  background-position: 110% 0;
 }

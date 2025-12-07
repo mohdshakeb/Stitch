@@ -99,6 +99,11 @@ function HomeContent() {
       setTimeout(() => {
         scrollToDocument(newDoc.id);
       }, 100);
+
+      // Clear the auto-focus state after a short delay so subsequent updates (like drops) don't re-focus/scroll to this doc
+      setTimeout(() => {
+        setNewlyCreatedDocId(null);
+      }, 2000);
     } catch (error) {
       console.error('Error creating document:', error);
     }
@@ -182,8 +187,8 @@ function HomeContent() {
           }
           const color = highlight.color || getCategoryStyles(highlight.url).color;
           const newContent = targetDoc.content
-            ? `${targetDoc.content}<p><span class="highlight-marker highlight-animate" style="--highlight-color: ${color}">${highlight.text}</span></p>`
-            : `<p><span class="highlight-marker highlight-animate" style="--highlight-color: ${color}">${highlight.text}</span></p>`;
+            ? `${targetDoc.content}<p><span data-highlight-id="${highlight.id}" class="highlight-marker highlight-animate" style="--highlight-color: ${color}">${highlight.text}</span></p>`
+            : `<p><span data-highlight-id="${highlight.id}" class="highlight-marker highlight-animate" style="--highlight-color: ${color}">${highlight.text}</span></p>`;
 
           await addDocument({
             ...targetDoc,

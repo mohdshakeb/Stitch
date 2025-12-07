@@ -66,25 +66,86 @@ export default function DocumentPreviewCard({
     };
 
     const renderContent = () => {
-        // Render sanitized content (in this case, raw from DB as it's local) 
-        // We use CSS line-clamp to handle truncation now
         if (!doc.content) {
             return <div style={{ fontStyle: 'italic', opacity: 0.5 }}>Drop highlights here or start writing...</div>;
         }
 
+        const isLongContent = doc.content.length > 1200; // Increased threshold to prevent duplication on medium files
+
+        if (isLongContent) {
+            return (
+                <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+                    {/* Top Half */}
+                    <div
+                        dangerouslySetInnerHTML={{ __html: doc.content }}
+                        className="document-preview-content"
+                        style={{
+                            height: '50%',
+                            overflow: 'hidden',
+                            // No fade mask as requested
+                        }}
+                    />
+
+                    {/* Separator */}
+                    <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '8px',
+                        padding: '12px 0',
+                        color: 'hsl(var(--muted))',
+                        opacity: 0.5
+                    }}>
+                        <div style={{ height: '1px', flex: 1, backgroundColor: 'hsl(var(--border))' }}></div>
+                        <span style={{ fontSize: '0.8rem', letterSpacing: '2px' }}>•••</span>
+                        <div style={{ height: '1px', flex: 1, backgroundColor: 'hsl(var(--border))' }}></div>
+                    </div>
+
+                    {/* Bottom Half */}
+                    <div style={{
+                        height: '50%',
+                        overflow: 'hidden',
+                        display: 'flex',
+                        alignItems: 'flex-end',
+                    }}>
+                        <div
+                            dangerouslySetInnerHTML={{ __html: doc.content }}
+                            className="document-preview-content"
+                            style={{ width: '100%' }}
+                        />
+                    </div>
+
+                    <style jsx>{`
+                        .document-preview-content :global(p) {
+                            margin-bottom: 0.75rem;
+                            line-height: 1.5;
+                        }
+                    `}</style>
+                </div>
+            );
+        }
+
         return (
-            <div
-                dangerouslySetInnerHTML={{ __html: doc.content }}
-                className="document-preview-content"
-                style={{
-                    display: '-webkit-box',
-                    WebkitLineClamp: 12, // Show more content since we have space
-                    WebkitBoxOrient: 'vertical',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    wordBreak: 'break-word',
-                }}
-            />
+            <>
+                <div
+                    dangerouslySetInnerHTML={{ __html: doc.content }}
+                    className="document-preview-content"
+                    style={{
+                        display: '-webkit-box',
+                        WebkitLineClamp: 12,
+                        WebkitBoxOrient: 'vertical',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        wordBreak: 'break-word',
+                    }}
+                />
+                <style jsx>{`
+                    .document-preview-content :global(p) {
+                        margin-bottom: 0.75rem;
+                        line-height: 1.5;
+                    }
+                `}</style>
+            </>
         );
     };
 

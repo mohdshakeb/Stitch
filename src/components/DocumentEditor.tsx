@@ -36,7 +36,8 @@ const HighlightMark = Mark.create({
                     if (typeof node === 'string') return {};
                     const element = node as HTMLElement;
                     const style = element.getAttribute('style');
-                    return { style };
+                    const id = element.getAttribute('data-highlight-id');
+                    return { style, id };
                 }
             },
         ]
@@ -53,12 +54,16 @@ const HighlightMark = Mark.create({
                 default: null,
                 parseHTML: (element: HTMLElement) => element.getAttribute('style'),
                 renderHTML: (attributes: Record<string, any>) => {
-                    if (!attributes.style) {
-                        return {}
-                    }
-                    return {
-                        style: attributes.style,
-                    }
+                    if (!attributes.style) return {}
+                    return { style: attributes.style }
+                },
+            },
+            id: {
+                default: null,
+                parseHTML: (element: HTMLElement) => element.getAttribute('data-highlight-id'),
+                renderHTML: (attributes: Record<string, any>) => {
+                    if (!attributes.id) return {}
+                    return { 'data-highlight-id': attributes.id }
                 },
             },
         }

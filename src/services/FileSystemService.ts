@@ -37,11 +37,21 @@ const STORE_NAME = 'handles';
 const FILES_STORE = 'files'; // New store for internal file content
 const HANDLE_KEY = 'root_dir';
 const STORAGE_MODE_KEY = 'storage_mode'; // 'folder' | 'internal'
+const WORKING_HANDLE_KEY = 'active_handle'; // Key for the currently active workspace handle
+const WORKSPACES_KEY = 'workspaces_list';
+const ACTIVE_WORKSPACE_ID_KEY = 'active_workspace_id';
+
+export interface WorkspaceMetadata {
+    id: string;
+    name: string;
+    handle: FileSystemDirectoryHandle;
+    lastAccessed: string;
+}
 
 interface HighlightDB extends DBSchema {
     handles: {
         key: string;
-        value: FileSystemDirectoryHandle | string;
+        value: FileSystemDirectoryHandle | string | WorkspaceMetadata[];
     };
     files: {
         key: string;
@@ -103,6 +113,8 @@ const SEED_DOCUMENTS: DocumentType[] = [
 
 export class FileSystemService {
     private dirHandle: FileSystemDirectoryHandle | null = null;
+    private currentWorkspaceId: string | null = null;
+
     constructor() {
         // Lazy init
         // Ensure manual seeding happens only once per session if needed, but checking file existence is better
@@ -117,7 +129,7 @@ export class FileSystemService {
                 // Return a never-resolving promise or reject if called on server
                 return Promise.reject(new Error('IndexedDB not available on server'));
             }
-            this._dbPromise = openDB<HighlightDB>(DB_NAME, 2, { // Bump version to 2
+            this._dbPromise = openDB<HighlightDB>(DB_NAME, 3, { // Bump version to 3
                 upgrade(db, oldVersion, newVersion, transaction) {
                     if (oldVersion < 1) {
                         db.createObjectStore(STORE_NAME);
@@ -131,25 +143,45 @@ export class FileSystemService {
         return this._dbPromise;
     }
 
-    async connect(): Promise<void> {
-        // Check if API is supported
+    // --- WORKSPACE METHODS ---
+
+    async getWorkspaces(): Promise<WorkspaceMetadata[]> {
+        const db = await this.dbPromise;
+        const list = await db.get(STORE_NAME, WORKSPACES_KEY) as WorkspaceMetadata[] | undefined;
+        return list || [];
+    }
+
+    async getActiveWorkspaceId(): Promise<string | null> {
+        const db = await this.dbPromise;
+        return (await db.get(STORE_NAME, ACTIVE_WORKSPACE_ID_KEY) as string) || null;
+    }
+
+    async createWorkspace(): Promise<WorkspaceMetadata> {
         if (typeof window.showDirectoryPicker !== 'function') {
-            throw new Error('File System Access API (window.showDirectoryPicker) is not available in this browser.');
+            throw new Error('File System Access API is not available.');
         }
 
         try {
-            this.dirHandle = await window.showDirectoryPicker({
+            const handle = await window.showDirectoryPicker({
                 mode: 'readwrite',
                 id: 'highlight-app-data',
             });
 
+            const workspace: WorkspaceMetadata = {
+                id: crypto.randomUUID(),
+                name: handle.name,
+                handle: handle,
+                lastAccessed: new Date().toISOString()
+            };
+
             const db = await this.dbPromise;
-            await db.put(STORE_NAME, this.dirHandle, HANDLE_KEY);
-            await db.put(STORE_NAME, 'folder', STORAGE_MODE_KEY);
-            this.useInternalStorage = false;
+            const existing = (await db.get(STORE_NAME, WORKSPACES_KEY) as WorkspaceMetadata[]) || [];
 
-            await this.seedData();
+            // Avoid duplicates by simple name check if needed, or just append
+            await db.put(STORE_NAME, [...existing, workspace], WORKSPACES_KEY);
 
+            await this.calculateActiveWorkspace(workspace);
+            return workspace;
         } catch (error) {
             if ((error as Error).name === 'AbortError') {
                 throw new Error('User cancelled folder selection');
@@ -158,11 +190,49 @@ export class FileSystemService {
         }
     }
 
+    async switchToWorkspace(id: string): Promise<boolean> {
+        const workspaces = await this.getWorkspaces();
+        const target = workspaces.find(w => w.id === id);
+        if (!target) return false;
+
+        const hasPermission = await this.verifyPermission(target.handle, true, true);
+        if (hasPermission) {
+            await this.calculateActiveWorkspace(target);
+            return true;
+        }
+        return false;
+    }
+
+    private async calculateActiveWorkspace(ws: WorkspaceMetadata) {
+        this.dirHandle = ws.handle;
+        this.currentWorkspaceId = ws.id;
+        this.useInternalStorage = false;
+
+        const db = await this.dbPromise;
+        await db.put(STORE_NAME, ws.handle, HANDLE_KEY); // Keep legacy updated
+        await db.put(STORE_NAME, ws.id, ACTIVE_WORKSPACE_ID_KEY);
+        await db.put(STORE_NAME, 'folder', STORAGE_MODE_KEY);
+
+        const list = await this.getWorkspaces();
+        const updatedList = list.map(w => w.id === ws.id ? { ...w, lastAccessed: new Date().toISOString() } : w);
+        await db.put(STORE_NAME, updatedList, WORKSPACES_KEY);
+
+        await this.seedData();
+    }
+
+    async connect(): Promise<void> {
+        await this.createWorkspace();
+    }
+
     async enableInternalStorage(): Promise<void> {
         this.useInternalStorage = true;
-        // Clear any existing handle and save preference
+        this.dirHandle = null;
+        this.currentWorkspaceId = null;
+
         const db = await this.dbPromise;
         await db.delete(STORE_NAME, HANDLE_KEY);
+        // We don't delete workspaces list, just unset active
+        await db.delete(STORE_NAME, ACTIVE_WORKSPACE_ID_KEY);
         await db.put(STORE_NAME, 'internal', STORAGE_MODE_KEY);
 
         await this.seedData();
@@ -194,6 +264,8 @@ export class FileSystemService {
         }
     }
 
+    // -------------------------
+
     async reconnect(): Promise<boolean> {
         try {
             const db = await this.dbPromise;
@@ -211,10 +283,10 @@ export class FileSystemService {
             // If storage mode is 'folder', try to restore folder handle
             if (storageMode === 'folder') {
                 const handle = await db.get(STORE_NAME, HANDLE_KEY);
-                if (handle && typeof handle !== 'string') {
-                    // Start with silent verification (force=false)
-                    // We cannot prompt for permission during auto-connect (it triggers User Activation error)
-                    const permission = await this.verifyPermission(handle, true, false);
+                if (handle && typeof handle !== 'string' && !Array.isArray(handle)) { // Check isn't array
+                    // It is a handle
+                    const h = handle as FileSystemDirectoryHandle;
+                    const permission = await this.verifyPermission(h, true, false);
                     if (permission) {
                         this.dirHandle = handle;
                         this.useInternalStorage = false;
@@ -235,8 +307,18 @@ export class FileSystemService {
     async disconnect(): Promise<void> {
         this.dirHandle = null;
         this.useInternalStorage = false;
+        this.currentWorkspaceId = null;
         const db = await this.dbPromise;
-        await db.clear(STORE_NAME); // Clear saved handles/preferences
+        // Don't clear EVERYTHING, just active state?
+        // User asked for "Disconnect" usually implies "Close current folder"
+        // But the original code cleared STORE_NAME completely.
+        // Let's keep it safe: clear active state.
+
+        // Wait, "Disconnect" in UI means "Close folder".
+        // Use case: Resetting app state.
+        // If we want to keep workspaces, we shouldn't clear STORE_NAME.
+        // But let's stick to original behavior for now: Logout.
+        await db.clear(STORE_NAME);
     }
 
     async verifyPermission(fileHandle: FileSystemHandle, readWrite: boolean, force: boolean = true): Promise<boolean> {
