@@ -33,9 +33,9 @@ export const CATEGORY_CONFIG: Record<Category, CategoryConfig> = {
         label: 'AI Tool'
     },
     other: {
-        color: '#ffffff', // White default
-        textColor: '#0f172a',
-        borderColor: '#e2e8f0',
+        color: '#f3f4f6', // Grey for generic web content
+        textColor: '#1f2937',
+        borderColor: '#e5e7eb',
         label: 'Web'
     }
 };
@@ -59,9 +59,13 @@ export function getCategoryFromUrl(urlStr: string): Category {
             return 'academic';
         }
 
-        // Articles (Default fallback for most content sites)
-        // We treat almost everything else as an 'article' since that's the primary use case
-        return 'article';
+        // Article/News sites (Specific list or patterns if needed, otherwise fall to other)
+        if (['medium.com', 'substack.com', 'nytimes.com', 'bbc.com', 'cnn.com', 'dev.to'].some(d => hostname.includes(d))) {
+            return 'article';
+        }
+
+        // Everything else falls to 'other'
+        return 'other';
     } catch (e) {
         return 'other';
     }
