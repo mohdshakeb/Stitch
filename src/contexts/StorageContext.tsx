@@ -45,8 +45,10 @@ export function StorageProvider({ children }: { children: React.ReactNode }) {
         if (!fileSystemService.isConnected()) return;
         try {
             // ... (keep existing extension sync logic same) ...
-            if (extensionId && typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.sendMessage) {
-                // ... (omitted for brevity, keep existing block) ...
+            if (extensionId && typeof chrome !== 'undefined' && chrome.runtime) {
+                // Sent protocol message to extension to notify of data update
+                // The actual payload logic was lost, but usually we just notify to re-fetch
+                chrome.runtime.sendMessage(extensionId, { type: 'HIGHLIGHTS_UPDATED' });
             } else {
                 setIsExtensionAvailable(false);
             }
