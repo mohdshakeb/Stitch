@@ -199,7 +199,7 @@ a {
 
 /* Entrance Animation (Temporary) */
 .highlight-animate {
-  animation: highlight-swipe 1s ease forwards;
+  animation: highlight-swipe var(--highlight-duration, 1s) ease forwards;
   background-image: linear-gradient(120deg, var(--highlight-color) 50%, transparent 50%);
   background-size: 200% 100%;
   background-position: 110% 0;

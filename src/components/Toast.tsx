@@ -6,6 +6,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 export interface ToastProps {
     id: string;
     message: string;
+    description?: string;
     type?: 'success' | 'error' | 'info';
     duration?: number;
     onUndo?: () => void;
@@ -15,6 +16,7 @@ export interface ToastProps {
 export default function Toast({
     id,
     message,
+    description,
     type = 'info',
     duration = 4000,
     onUndo,
@@ -30,39 +32,104 @@ export default function Toast({
 
     return (
         <motion.div
-            initial={{ opacity: 0, y: 50, scale: 0.9 }}
+            initial={{ opacity: 0, y: 10, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 20, scale: 0.9 }}
+            exit={{ opacity: 0, y: 10, scale: 0.98 }}
+            transition={{ type: 'spring', stiffness: 400, damping: 30 }}
             layout
-            className={`
-        flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg border
-        ${type === 'error' ? 'bg-red-50 border-red-200 text-red-800' :
-                    type === 'success' ? 'bg-green-50 border-green-200 text-green-800' :
-                        'bg-white border-gray-200 text-gray-800'}
-      `}
             style={{
-                minWidth: '320px',
-                maxWidth: '400px',
+                backgroundColor: 'hsl(var(--surface))',
+                borderColor: 'hsl(var(--border))',
+                minWidth: '340px',
+                maxWidth: '420px',
                 pointerEvents: 'auto',
+                boxShadow: 'var(--shadow-lg)',
+                padding: '20px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '12px',
+                borderRadius: '12px',
+                borderWidth: '1px',
+                borderStyle: 'solid',
+                position: 'relative',
             }}
         >
-            <div className="flex-1 text-sm font-medium">{message}</div>
-
-            {onUndo && (
-                <button
-                    onClick={onUndo}
-                    className="px-3 py-1 text-xs font-semibold bg-gray-900 text-white rounded hover:bg-gray-800 transition-colors"
-                >
-                    Undo
-                </button>
-            )}
-
             <button
                 onClick={() => onClose(id)}
-                className="p-1 rounded-full hover:bg-black/5 transition-colors"
+                style={{
+                    position: 'absolute',
+                    top: '12px',
+                    right: '12px',
+                    padding: '4px',
+                    borderRadius: '6px',
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    color: 'hsl(var(--muted))',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                }}
+                onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = 'rgba(0,0,0,0.05)';
+                    e.currentTarget.style.color = 'hsl(var(--foreground))';
+                }}
+                onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = 'transparent';
+                    e.currentTarget.style.color = 'hsl(var(--muted))';
+                }}
             >
-                <i className="ri-close-line text-lg opacity-50 hover:opacity-100" />
+                <i className="ri-close-line" style={{ fontSize: '1.25rem' }} />
             </button>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', paddingRight: '24px' }}>
+                <h4
+                    style={{
+                        margin: 0,
+                        fontSize: '0.9rem',
+                        fontWeight: 600,
+                        color: 'hsl(var(--foreground))',
+                        lineHeight: 1.4,
+                    }}
+                >
+                    {message}
+                </h4>
+                {description && (
+                    <p
+                        style={{
+                            margin: 0,
+                            fontSize: '0.85rem',
+                            color: 'hsl(var(--muted))', // Slightly darker than standard muted for readability
+                            lineHeight: 1.5,
+                        }}
+                    >
+                        {description}
+                    </p>
+                )}
+            </div>
+
+            {onUndo && (
+                <div style={{ display: 'flex', justifyContent: 'flex-start', marginTop: '4px' }}>
+                    <button
+                        onClick={onUndo}
+                        style={{
+                            fontSize: '0.8rem',
+                            fontWeight: 500,
+                            padding: '6px 12px',
+                            borderRadius: '6px',
+                            backgroundColor: 'hsl(var(--foreground))',
+                            color: 'hsl(var(--surface))',
+                            border: 'none',
+                            cursor: 'pointer',
+                            transition: 'opacity 0.2s',
+                        }}
+                        onMouseEnter={(e) => e.currentTarget.style.opacity = '0.9'}
+                        onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
+                    >
+                        Undo
+                    </button>
+                </div>
+            )}
         </motion.div>
     );
 }

@@ -8,6 +8,8 @@ interface ToastOptions {
     type?: 'success' | 'error' | 'info';
     duration?: number;
     onUndo?: () => void;
+    description?: string;
+    actionLabel?: string; // Adding generic action label support while I'm at it? User mentioned "action button". onUndo usually is "Undo". I'll leave onUndo for now, maybe add actionLabel if needed later, but "Undo" is the only current use case.
 }
 
 interface ToastContextType {

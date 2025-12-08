@@ -119,6 +119,7 @@ function HomeContent() {
 
       showToast('Highlight deleted', {
         type: 'success',
+        description: 'The selected highlight has been removed.',
         onUndo: async () => {
           await addHighlight(highlightToDelete);
         }
@@ -164,7 +165,10 @@ function HomeContent() {
           const currentIds = getDocIds(highlight);
 
           if (currentIds.includes(docId)) {
-            showToast('Already added to this document', { type: 'info' });
+            showToast('Already added', {
+              type: 'info',
+              description: 'This highlight is already part of this document.'
+            });
             return;
           }
 
@@ -186,9 +190,12 @@ function HomeContent() {
             return;
           }
           const color = highlight.color || getCategoryStyles(highlight.url).color;
+          // Calculate duration based on text length (0.02s per char), min 0.8s, max 3s
+          const duration = Math.min(3, Math.max(0.8, highlight.text.length * 0.02));
+
           const newContent = targetDoc.content
-            ? `${targetDoc.content}<p><span data-highlight-id="${highlight.id}" class="highlight-marker highlight-animate" style="--highlight-color: ${color}">${highlight.text}</span></p>`
-            : `<p><span data-highlight-id="${highlight.id}" class="highlight-marker highlight-animate" style="--highlight-color: ${color}">${highlight.text}</span></p>`;
+            ? `${targetDoc.content}<p><span data-highlight-id="${highlight.id}" class="highlight-marker highlight-animate" style="--highlight-color: ${color}; --highlight-duration: ${duration}s">${highlight.text}</span></p>`
+            : `<p><span data-highlight-id="${highlight.id}" class="highlight-marker highlight-animate" style="--highlight-color: ${color}; --highlight-duration: ${duration}s">${highlight.text}</span></p>`;
 
           await addDocument({
             ...targetDoc,
@@ -196,21 +203,24 @@ function HomeContent() {
             updatedAt: new Date().toISOString()
           });
 
-          showToast('Added to document', { type: 'success' });
+          showToast('Added to document', {
+            type: 'success',
+            description: 'The highlight text has been appended to the document.'
+          });
 
           // Cleanup animation class after it plays to prevent re-triggering
           setTimeout(async () => {
             // Remove the animation class but keep the marker class and inline style
-            // This is a "blind" update assuming no other concurrent edits occurred in the last 2 seconds.
+            // This is a "blind" update assuming no other concurrent edits occurred in the last few seconds.
             // For a local-first single-user app, this is an acceptable trade-off for the visual effect.
             const cleanContent = newContent.replace(/ highlight-animate/g, '');
 
             await addDocument({
               ...targetDoc,
-              content: cleanContent,
+              content: cleanContent, // Using the variable from closure is safe here as it hasn't changed locally
               updatedAt: new Date().toISOString()
             });
-          }, 2000);
+          }, duration * 1000 + 500); // Wait for animation + buffer
 
         }
       } catch (error) {
@@ -244,6 +254,7 @@ function HomeContent() {
       await removeDocument(id);
       showToast('Document deleted', {
         type: 'success',
+        description: 'The document and its content have been removed.',
         onUndo: async () => {
           await addDocument(docToDelete);
           for (const h of linkedHighlights) {
