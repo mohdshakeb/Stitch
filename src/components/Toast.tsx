@@ -10,6 +10,10 @@ export interface ToastProps {
     type?: 'success' | 'error' | 'info';
     duration?: number;
     onUndo?: () => void;
+    action?: {
+        label: string;
+        onClick: () => void;
+    };
     onClose: (id: string) => void;
 }
 
@@ -20,6 +24,7 @@ export default function Toast({
     type = 'info',
     duration = 4000,
     onUndo,
+    action,
     onClose,
 }: ToastProps) {
     useEffect(() => {
@@ -108,7 +113,33 @@ export default function Toast({
                 )}
             </div>
 
-            {onUndo && (
+            {action && (
+                <div style={{ display: 'flex', justifyContent: 'flex-start', marginTop: '4px' }}>
+                    <button
+                        onClick={() => {
+                            action.onClick();
+                            onClose(id);
+                        }}
+                        style={{
+                            fontSize: '0.8rem',
+                            fontWeight: 500,
+                            padding: '6px 12px',
+                            borderRadius: '6px',
+                            backgroundColor: 'hsl(var(--foreground))',
+                            color: 'hsl(var(--surface))',
+                            border: 'none',
+                            cursor: 'pointer',
+                            transition: 'opacity 0.2s',
+                        }}
+                        onMouseEnter={(e) => e.currentTarget.style.opacity = '0.9'}
+                        onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
+                    >
+                        {action.label}
+                    </button>
+                </div>
+            )}
+
+            {!action && onUndo && (
                 <div style={{ display: 'flex', justifyContent: 'flex-start', marginTop: '4px' }}>
                     <button
                         onClick={onUndo}

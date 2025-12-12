@@ -44,15 +44,17 @@ const DocumentFeed = forwardRef<HTMLDivElement, DocumentFeedProps>(({
             style={{
                 flex: 0.8,
                 height: '100vh',
-                overflowY: 'auto',
-                scrollSnapType: 'y mandatory',
-                paddingTop: 'calc(50vh - 318px)', // Adjusted for 450px width
-                paddingBottom: '50vh',
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'center',
                 gap: '16px',
                 scrollbarWidth: 'none',
+                // Conditional styles for empty state
+                overflowY: documents.length === 0 ? 'hidden' : 'auto',
+                scrollSnapType: documents.length === 0 ? 'none' : 'y mandatory',
+                paddingTop: documents.length === 0 ? 0 : 'calc(50vh - 318px)',
+                paddingBottom: documents.length === 0 ? 0 : '50vh',
+                justifyContent: documents.length === 0 ? 'center' : 'flex-start',
             }}
         >
             {documents.map((doc) => (

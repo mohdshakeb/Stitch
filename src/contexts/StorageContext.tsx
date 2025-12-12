@@ -24,7 +24,8 @@ interface StorageContextType {
     workspaces: WorkspaceMetadata[];
     activeWorkspaceId: string | null;
     createWorkspace: () => Promise<void>;
-    switchWorkspace: (id: string) => Promise<void>;
+    switchWorkspace: (id: string) => Promise<boolean>;
+    removeWorkspace: (id: string) => Promise<void>;
 }
 
 const StorageContext = createContext<StorageContextType | undefined>(undefined);
@@ -41,17 +42,70 @@ export function StorageProvider({ children }: { children: React.ReactNode }) {
     const [workspaces, setWorkspaces] = useState<WorkspaceMetadata[]>([]);
     const [activeWorkspaceId, setActiveWorkspaceId] = useState<string | null>(null);
 
+
+
+    // --- Extension Sync Logic ---
+    const syncExtensionData = useCallback(async () => {
+        if (!extensionId || typeof chrome === 'undefined' || !chrome.runtime || !fileSystemService.isConnected()) return;
+
+        try {
+            console.log('Syncing with extension...', extensionId);
+            const response = await new Promise<{ highlights: HighlightType[] }>((resolve, reject) => {
+                // Set a timeout to avoid hanging forever if extension doesn't respond
+                const timeout = setTimeout(() => {
+                    resolve({ highlights: [] });
+                }, 2000);
+
+                try {
+                    chrome.runtime.sendMessage(extensionId, { type: 'GET_PENDING' }, (response) => {
+                        clearTimeout(timeout);
+                        if (chrome.runtime.lastError) {
+                            console.warn('Extension sync error:', chrome.runtime.lastError);
+                            resolve({ highlights: [] }); // Resolve empty on error
+                        } else {
+                            resolve(response);
+                        }
+                    });
+                } catch (e) {
+                    clearTimeout(timeout);
+                    resolve({ highlights: [] });
+                }
+            });
+
+            if (response && response.highlights && Array.isArray(response.highlights) && response.highlights.length > 0) {
+                console.log(`Found ${response.highlights.length} pending highlights from extension.`);
+
+                // Save locally
+                for (const h of response.highlights) {
+                    await fileSystemService.saveHighlight(h);
+                }
+
+                // Clear from extension
+                // Use a fire-and-forget approach or short timeout for clear
+                chrome.runtime.sendMessage(extensionId, { type: 'CLEAR_PENDING' });
+
+                return true;
+            }
+        } catch (error) {
+            console.error('Failed to sync with extension:', error);
+        }
+        return false;
+    }, [extensionId]);
+
     const refreshData = useCallback(async () => {
         if (!fileSystemService.isConnected()) return;
         try {
-            // ... (keep existing extension sync logic same) ...
+            // 1. Sync from Extension (Pull)
+            // We do this BEFORE loading from FS so we include just-imported items
+            if (extensionId) {
+                await syncExtensionData();
+            }
+
+            // ... (keep existing push logic same) ...
             if (extensionId && typeof chrome !== 'undefined' && chrome.runtime) {
                 // Sent protocol message to extension to notify of data update
-                // The actual payload logic was lost, but usually we just notify to re-fetch
                 chrome.runtime.sendMessage(extensionId, { type: 'HIGHLIGHTS_UPDATED' });
             }
-            // Do NOT aggressively set to false, as chrome.runtime might be missing 
-            // in standard context even if extension is installed and communicating via window.postMessage
 
             // 2. Load from File System
             const h = await fileSystemService.getHighlights();
@@ -68,7 +122,7 @@ export function StorageProvider({ children }: { children: React.ReactNode }) {
         } catch (error) {
             console.error('Failed to refresh data:', error);
         }
-    }, [extensionId]);
+    }, [extensionId, syncExtensionData]);
 
     // ... (Protocol useEffects same) ...
     useEffect(() => {
@@ -118,7 +172,8 @@ export function StorageProvider({ children }: { children: React.ReactNode }) {
     const createWorkspace = async () => {
         setIsConnecting(true);
         try {
-            await fileSystemService.createWorkspace();
+            // Pass current highlights to clone them into the new workspace
+            await fileSystemService.createWorkspace(highlights);
             setIsConnected(true);
             await refreshData();
         } catch (error) {
@@ -131,21 +186,31 @@ export function StorageProvider({ children }: { children: React.ReactNode }) {
         }
     };
 
-    const switchWorkspace = async (id: string) => {
+    const switchWorkspace = async (id: string): Promise<boolean> => {
         setIsConnecting(true);
         try {
-            const success = await fileSystemService.switchToWorkspace(id);
+            // Pass current highlights to sync them to the target workspace
+            const success = await fileSystemService.switchToWorkspace(id, highlights);
             if (success) {
                 await refreshData();
+                return true;
             } else {
-                // Should not happen if ID is valid, but maybe permission denied and not forced? 
-                // Service handles prompt.
+                return false;
             }
         } catch (error) {
             console.error('Switch failed:', error);
+            return false;
         } finally {
             setIsConnecting(false);
         }
+    };
+
+    const removeWorkspace = async (id: string) => {
+        console.log('Context: Removing workspace', id);
+        await fileSystemService.removeWorkspace(id);
+        console.log('Context: Refreshing data after removal...');
+        await refreshData();
+        console.log('Context: Refresh complete.');
     };
 
     const disconnect = async () => {
@@ -181,6 +246,9 @@ export function StorageProvider({ children }: { children: React.ReactNode }) {
     };
 
     const removeHighlight = async (id: string) => {
+        // Record deletion globally for sync
+        await fileSystemService.recordDeletion(id);
+
         await fileSystemService.deleteHighlight(id);
         await refreshData();
     };
@@ -291,7 +359,8 @@ export function StorageProvider({ children }: { children: React.ReactNode }) {
                 workspaces,
                 activeWorkspaceId,
                 createWorkspace,
-                switchWorkspace
+                switchWorkspace,
+                removeWorkspace
             }}
         >
             {children}

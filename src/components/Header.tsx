@@ -3,7 +3,9 @@
 import { useTheme } from 'next-themes';
 import { useEffect, useState, useRef } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { useStorage } from '@/contexts/StorageContext';
+import { useToast } from '@/contexts/ToastContext';
 
 import { useRouter } from 'next/navigation';
 
@@ -15,14 +17,32 @@ export default function Header({ variant = 'default' }: HeaderProps) {
     const { theme, setTheme } = useTheme();
     const [mounted, setMounted] = useState(false);
     const router = useRouter();
-    const { disconnect, exportData, isConnected, workspaces, activeWorkspaceId, createWorkspace, switchWorkspace } = useStorage();
+    const { workspaces, activeWorkspaceId, createWorkspace, switchWorkspace, disconnect, exportData, removeWorkspace, isConnected } = useStorage();
     const [showSettings, setShowSettings] = useState(false);
     const [showWorkspaces, setShowWorkspaces] = useState(false);
     const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+    const { showToast } = useToast();
+
+    // Moved handleSwitchWorkspace outside of useEffect
+    const handleSwitchWorkspace = async (id: string) => {
+        const success = await switchWorkspace(id);
+        if (!success) {
+            // Workspace likely deleted or moved. Offer to remove.
+            showToast('Workspace not found', {
+                type: 'error',
+                description: 'The folder seems to be moved or deleted.',
+                action: {
+                    label: 'Remove',
+                    onClick: () => removeWorkspace(id)
+                }
+            });
+        }
+    };
 
     useEffect(() => {
         setMounted(true);
 
+        // handleSwitchWorkspace is now outside, so this part is removed from useEffect
         const handleClickOutside = (e: MouseEvent) => {
             if (showSettings && !(e.target as Element).closest('.settings-menu')) {
                 setShowSettings(false);
@@ -30,7 +50,7 @@ export default function Header({ variant = 'default' }: HeaderProps) {
         };
         document.addEventListener('click', handleClickOutside);
         return () => document.removeEventListener('click', handleClickOutside);
-    }, [showSettings]);
+    }, [showSettings]); // Dependency array updated
 
     if (!mounted) return null;
 
@@ -241,7 +261,7 @@ export default function Header({ variant = 'default' }: HeaderProps) {
                                                     <button
                                                         key={ws.id}
                                                         onClick={() => {
-                                                            switchWorkspace(ws.id);
+                                                            handleSwitchWorkspace(ws.id);
                                                             setShowSettings(false);
                                                         }}
                                                         style={{

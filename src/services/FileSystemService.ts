@@ -38,6 +38,7 @@ const FILES_STORE = 'files'; // New store for internal file content
 const HANDLE_KEY = 'root_dir';
 const STORAGE_MODE_KEY = 'storage_mode'; // 'folder' | 'internal'
 const WORKING_HANDLE_KEY = 'active_handle'; // Key for the currently active workspace handle
+const DELETION_LOG_KEY = 'deletion_log';
 const WORKSPACES_KEY = 'workspaces_list';
 const ACTIVE_WORKSPACE_ID_KEY = 'active_workspace_id';
 
@@ -156,7 +157,7 @@ export class FileSystemService {
         return (await db.get(STORE_NAME, ACTIVE_WORKSPACE_ID_KEY) as string) || null;
     }
 
-    async createWorkspace(): Promise<WorkspaceMetadata> {
+    async createWorkspace(initialHighlights?: HighlightType[]): Promise<WorkspaceMetadata> {
         if (typeof window.showDirectoryPicker !== 'function') {
             throw new Error('File System Access API is not available.');
         }
@@ -180,7 +181,17 @@ export class FileSystemService {
             // Avoid duplicates by simple name check if needed, or just append
             await db.put(STORE_NAME, [...existing, workspace], WORKSPACES_KEY);
 
-            await this.calculateActiveWorkspace(workspace);
+            // Sanitize highlights for CLONE (reset document associations)
+            let sanitizedHighlights: HighlightType[] | undefined = initialHighlights;
+            if (initialHighlights && initialHighlights.length > 0) {
+                sanitizedHighlights = initialHighlights.map(h => ({
+                    ...h,
+                    documentId: null,
+                    documentIds: []
+                }));
+            }
+
+            await this.calculateActiveWorkspace(workspace, sanitizedHighlights);
             return workspace;
         } catch (error) {
             if ((error as Error).name === 'AbortError') {
@@ -190,24 +201,82 @@ export class FileSystemService {
         }
     }
 
-    async switchToWorkspace(id: string): Promise<boolean> {
+    async switchToWorkspace(id: string, sourceHighlights: HighlightType[] = []): Promise<boolean> {
         const workspaces = await this.getWorkspaces();
         const target = workspaces.find(w => w.id === id);
         if (!target) return false;
 
         const hasPermission = await this.verifyPermission(target.handle, true, true);
         if (hasPermission) {
-            await this.calculateActiveWorkspace(target);
-            return true;
+            // Capture previous state for rollback
+            const oldHandle = this.dirHandle;
+            const oldId = this.currentWorkspaceId;
+            const oldInternal = this.useInternalStorage;
+
+            try {
+                // Get Deletion Log
+                const db = await this.dbPromise;
+                const deletionLog = (await db.get(STORE_NAME, DELETION_LOG_KEY) as unknown as string[]) || [];
+
+                // Perform switch (in-memory)
+                this.dirHandle = target.handle;
+                this.currentWorkspaceId = target.id;
+                this.useInternalStorage = false;
+
+                // Read TARGET highlights (to merge with SOURCE)
+                const targetHighlights = await this.getHighlights() || [];
+
+                // MERGE: Source + Target
+                // Rule: If ID exists in both, prefer Source? Or prefer latest modified? 
+                // Since we don't track 'modifiedAt', let's assume Source (active session) is fresher or equal.
+                // Re-map to ensure uniqueness by ID.
+                const combinedMap = new Map<string, HighlightType>();
+
+                [...targetHighlights, ...sourceHighlights].forEach(h => {
+                    // Filter out zombie notes (if in deletion log)
+                    if (!deletionLog.includes(h.id)) {
+                        combinedMap.set(h.id, h);
+                    }
+                });
+
+                const mergedHighlights = Array.from(combinedMap.values());
+
+                // Seed/Write the merged list to the TARGET workspace
+                await this.seedData(mergedHighlights);
+
+                // Persist State (Success path)
+                await db.put(STORE_NAME, target.handle, HANDLE_KEY);
+                await db.put(STORE_NAME, target.id, ACTIVE_WORKSPACE_ID_KEY);
+                await db.put(STORE_NAME, 'folder', STORAGE_MODE_KEY);
+
+                const list = await this.getWorkspaces();
+                const updatedList = list.map(w => w.id === target.id ? { ...w, lastAccessed: new Date().toISOString() } : w);
+                await db.put(STORE_NAME, updatedList, WORKSPACES_KEY);
+
+                return true;
+            } catch (error) {
+                console.warn('Switch passed permission but failed validation/sync. Rolling back state.', error);
+
+                // Rollback
+                this.dirHandle = oldHandle;
+                this.currentWorkspaceId = oldId;
+                this.useInternalStorage = oldInternal;
+                return false;
+            }
         }
         return false;
     }
 
-    private async calculateActiveWorkspace(ws: WorkspaceMetadata) {
+    private async calculateActiveWorkspace(ws: WorkspaceMetadata, initialHighlights?: HighlightType[]) {
+        // Set memory state tentatively to allow seedData to attempt I/O
         this.dirHandle = ws.handle;
         this.currentWorkspaceId = ws.id;
         this.useInternalStorage = false;
 
+        // Verify I/O (and seed if needed) - THIS THROWS IF INVALID
+        await this.seedData(initialHighlights);
+
+        // ONLY persist if verification succeeded
         const db = await this.dbPromise;
         await db.put(STORE_NAME, ws.handle, HANDLE_KEY); // Keep legacy updated
         await db.put(STORE_NAME, ws.id, ACTIVE_WORKSPACE_ID_KEY);
@@ -216,8 +285,35 @@ export class FileSystemService {
         const list = await this.getWorkspaces();
         const updatedList = list.map(w => w.id === ws.id ? { ...w, lastAccessed: new Date().toISOString() } : w);
         await db.put(STORE_NAME, updatedList, WORKSPACES_KEY);
+    }
 
-        await this.seedData();
+    async removeWorkspace(id: string): Promise<void> {
+        console.log(`Removing workspace ${id}. Current active: ${this.currentWorkspaceId}`);
+        const db = await this.dbPromise;
+        const list = (await db.get(STORE_NAME, WORKSPACES_KEY) as WorkspaceMetadata[]) || [];
+        const updatedList = list.filter(w => w.id !== id);
+        await db.put(STORE_NAME, updatedList, WORKSPACES_KEY);
+
+        // If we just removed the ACTIVE workspace, we should probably disconnect or switch?
+        // But for "Lazy Validation", we are likely removing a workspace we failed to switch TO.
+        // So the current active one (if any) is safe.
+        // If we ARE active on it (somehow), we should probably disconnect.
+        if (this.currentWorkspaceId === id) {
+            console.warn('Removed active workspace! Disconnecting.');
+            // This case shouldn't happen via the "switch failed" flow, but for robustness:
+            // await this.disconnect();
+        } else {
+            console.log('Removed workspace was not active. Safe.');
+        }
+    }
+
+    async recordDeletion(id: string): Promise<void> {
+        const db = await this.dbPromise;
+        const log = (await db.get(STORE_NAME, DELETION_LOG_KEY) as unknown as string[]) || [];
+        if (!log.includes(id)) {
+            log.push(id);
+            await db.put(STORE_NAME, log as unknown as WorkspaceMetadata[], DELETION_LOG_KEY);
+        }
     }
 
     async connect(): Promise<void> {
@@ -238,29 +334,82 @@ export class FileSystemService {
         await this.seedData();
     }
 
-    private async seedData(): Promise<void> {
-        try {
-            // Check if highlights exist
+    private async seedData(initialHighlights?: HighlightType[]): Promise<void> {
+        // If initialHighlights provided (Sync or Clone), we always WRITE using them.
+        if (initialHighlights && initialHighlights.length > 0) {
+            // Check if we need to reset documents (Clone case) vs Preserve (Sync case)
+            // Wait, existing logic for CLONE reset document IDs. 
+            // For SYNC (Switch), we probably want to PRESERVE relationships if they map to Valid Docs?
+            // But documents aren't synced. So any documentID pointing to a doc in Source that doesn't exist in Target is invalid.
+            // So sanitizing IDs is correct for both Cloning (New) AND Sync (Switch).
+
+            // However, we must be careful:
+            // if we are switching to an EXISTING workspace that HAS documents, 
+            // and we bring in a note that ALREADY existed there and WAS assigned to a doc,
+            // we don't want to wipe its assignment!
+
+            // Refined Sync Logic:
+            // The 'mergedHighlights' passed from switchToWorkspace already handles the merge.
+            // But 'seedData' logic attempts to 'sanitize'.
+            // If we are just writing the merged list, we should trust the caller (switchToWorkspace) to have prepared it?
+            // OR we should just write it as is.
+
+            // Let's change seedData to be dumber:
+            // If initialHighlights passed -> Write it exactly as is (caller handles logic).
+            // But wait, the CLONE logic relied on this function to sanitize.
+            // I should move the sanitization logic to 'createWorkspace' and 'switchToWorkspace' (if needed) 
+            // and make seedData just a writer.
+
+            // Actually, for now, let's keep the sanitization HERE but only if it's a "Clone" (Create)?
+            // Distinguishing Clone vs Sync:
+            // CreateWorkspace -> Clone.
+            // SwitchToWorkspace -> Sync.
+
+            // Implementing a simpler fix:
+            // For Sync (Switch), we want to merge. The 'mergedHighlights' passed in are ALREADY merged.
+            // They include:
+            // 1. Target's existing notes (with valid doc IDs for that workspace)
+            // 2. Source's incoming notes (which might have doc IDs valid in Source but invalid in Target).
+
+            // We should sanitize ONLY the incoming notes?
+            // Accessing 'mergedHighlights' blindly here is tricky.
+
+            // BETTER APPROACH:
+            // Modify seedData to blindly write 'initialHighlights' if provided.
+            // Move the "Sanitize" logic to the CALLER (createWorkspace).
+            // This makes seedData a true "Seeder/Writer".
+
+            console.log('Writing provided highlights (Sync/Clone)...');
+            await this.writeJsonFile(HIGHLIGHTS_FILE, initialHighlights);
+        } else {
+            // Default Seeding (only if file missing)
             const highlights = await this.readJsonFile<HighlightType[]>(HIGHLIGHTS_FILE, null as any);
             if (!highlights) {
-                console.log('Seeding initial highlights...');
-                // Add seed highlights to the first document as an example?
-                // User said "Document 1 contains a few example notes".
+                console.log('Seeding default highlights...');
+                // Default Seed logic
                 const seededHighlights = SEED_HIGHLIGHTS.map(h => ({
                     ...h,
-                    documentId: h.id === 'seed-3' ? null : 'doc-1' // Put first two in doc-1, keep 3rd unassigned to drag
+                    documentId: h.id === 'seed-3' ? null : 'doc-1'
                 }));
                 await this.writeJsonFile(HIGHLIGHTS_FILE, seededHighlights);
             }
+        }
 
-            // Check if documents exist
-            const docs = await this.readJsonFile<DocumentType[]>(DOCUMENTS_FILE, null as any);
-            if (!docs) {
-                console.log('Seeding initial documents...');
+        // Check if documents exist
+        const docs = await this.readJsonFile<DocumentType[]>(DOCUMENTS_FILE, null as any);
+        if (!docs) {
+            console.log('Seeding initial documents...');
+            // If we cloned highlights, we probably want NO documents (clean slate), 
+            // or just the default seeds but empty?
+            // User request: "Documents will remain empty".
+            // So if initialHighlights were passed, we write EMPTY list.
+            // If NOT passed (true fresh install), we write SEED_DOCUMENTS.
+
+            if (initialHighlights && initialHighlights.length > 0) {
+                await this.writeJsonFile(DOCUMENTS_FILE, []);
+            } else {
                 await this.writeJsonFile(DOCUMENTS_FILE, SEED_DOCUMENTS);
             }
-        } catch (e) {
-            console.error('Error seeding data:', e);
         }
     }
 
@@ -288,10 +437,20 @@ export class FileSystemService {
                     const h = handle as FileSystemDirectoryHandle;
                     const permission = await this.verifyPermission(h, true, false);
                     if (permission) {
-                        this.dirHandle = handle;
-                        this.useInternalStorage = false;
-                        await this.seedData();
-                        return true;
+                        try {
+                            this.dirHandle = handle;
+                            this.useInternalStorage = false;
+
+                            // Try to seed/access data to verify handle is actually valid (folder exists)
+                            await this.seedData();
+                            return true;
+                        } catch (e) {
+                            console.warn('Reconnection failed - Handle likely stale/deleted:', e);
+                            this.dirHandle = null;
+                            // Optionally clear the bad handle from DB?
+                            // await this.disconnect(); // This clears everything. Maybe just return false.
+                            return false;
+                        }
                     }
                 }
             }

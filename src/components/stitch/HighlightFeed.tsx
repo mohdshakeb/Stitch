@@ -26,7 +26,10 @@ export default function HighlightFeed({
     // Filter logic logic inside the component
     const filteredHighlights = selectedCategory
         ? highlights.filter(h => getCategoryFromUrl(h.url) === selectedCategory)
-        : highlights;
+        : [...highlights];
+
+    // Sort by latest -> oldest
+    filteredHighlights.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
     // Helper to normalize document IDs (duplicated slightly but safe)
     const getDocIds = (h: HighlightType) => {

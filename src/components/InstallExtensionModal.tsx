@@ -135,16 +135,16 @@ export default function InstallExtensionModal({ isOpen, onClose }: InstallExtens
                         }}>
                             {/* Placeholder or Real Video */}
                             <video
-                                src="/install-tutorial.webm"
+                                src="/install-tutorial.mp4"
                                 autoPlay
                                 loop
                                 muted
                                 playsInline
-                                style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                                 onError={(e) => {
                                     // Fallback if video missing
                                     e.currentTarget.style.display = 'none';
-                                    e.currentTarget.parentElement!.innerText = 'Video Tutorial Placeholder\n(Add install-tutorial.webm to public/)';
+                                    e.currentTarget.parentElement!.innerText = 'Video Tutorial Placeholder\n(Add install-tutorial.mp4 to public/)';
                                 }}
                             />
                         </div>
