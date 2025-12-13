@@ -481,11 +481,7 @@ export class FileSystemService {
         return this.dirHandle !== null || this.useInternalStorage;
     }
 
-    async exportData(): Promise<AppData> {
-        const highlights = await this.getHighlights();
-        const documents = await this.getDocuments();
-        return { highlights, documents };
-    }
+
 
     isInternal(): boolean {
         return this.useInternalStorage;

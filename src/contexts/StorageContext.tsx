@@ -17,7 +17,7 @@ interface StorageContextType {
     removeDocument: (id: string) => Promise<void>;
     updateDocument: (id: string, updates: Partial<DocumentType>) => Promise<void>;
     refreshData: () => Promise<void>;
-    exportData: () => Promise<void>;
+
     extensionId: string | null;
     isExtensionAvailable: boolean;
     // Workspaces
@@ -317,24 +317,7 @@ export function StorageProvider({ children }: { children: React.ReactNode }) {
         }
     };
 
-    const exportData = async () => {
-        // ... export logic (KEEP SAME) ...
-        try {
-            const data = await fileSystemService.exportData();
-            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `highlight-export-${new Date().toISOString().split('T')[0]}.json`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-        } catch (error) {
-            console.error('Export failed:', error);
-            alert('Failed to export data');
-        }
-    };
+
 
     return (
         <StorageContext.Provider
@@ -352,7 +335,7 @@ export function StorageProvider({ children }: { children: React.ReactNode }) {
                 addDocument,
                 removeDocument,
                 updateDocument,
-                exportData,
+
                 extensionId,
                 isExtensionAvailable,
                 // Workspaces

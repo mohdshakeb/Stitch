@@ -1,7 +1,7 @@
 'use client';
 
 import { useEditor, EditorContent, BubbleMenu } from '@tiptap/react';
-import { Mark, mergeAttributes } from '@tiptap/core';
+import { Mark, mergeAttributes, Extension } from '@tiptap/core';
 import StarterKit from '@tiptap/starter-kit';
 import Placeholder from '@tiptap/extension-placeholder';
 import BubbleMenuExtension from '@tiptap/extension-bubble-menu';
@@ -12,6 +12,7 @@ interface DocumentEditorProps {
     documentId: string;
     initialTitle: string;
     initialContent: string;
+    onEditorReady?: (editor: any) => void;
 }
 
 
@@ -70,7 +71,28 @@ const HighlightMark = Mark.create({
     },
 });
 
-export default function DocumentEditor({ documentId, initialTitle, initialContent }: DocumentEditorProps) {
+const RTLSupport = Extension.create({
+    name: 'rtlSupport',
+
+    addGlobalAttributes() {
+        return [
+            {
+                types: ['paragraph', 'heading', 'bulletList', 'orderedList', 'listItem'],
+                attributes: {
+                    dir: {
+                        default: 'auto',
+                        parseHTML: element => element.getAttribute('dir'),
+                        renderHTML: attributes => {
+                            return { dir: attributes.dir }
+                        },
+                    },
+                },
+            },
+        ]
+    },
+});
+
+export default function DocumentEditor({ documentId, initialTitle, initialContent, onEditorReady }: DocumentEditorProps) {
     // ... existing state ...
     const { updateDocument } = useStorage();
     const [title, setTitle] = useState(initialTitle);
@@ -98,6 +120,7 @@ export default function DocumentEditor({ documentId, initialTitle, initialConten
             }),
             BubbleMenuExtension,
             HighlightMark,
+            RTLSupport,
         ],
         content: initialContent, // Tiptap handles HTML content
         editorProps: {
@@ -141,6 +164,13 @@ export default function DocumentEditor({ documentId, initialTitle, initialConten
             }
         }
     }, [initialContent, editor]);
+
+    // Expose editor instance
+    useEffect(() => {
+        if (editor && onEditorReady) {
+            onEditorReady(editor);
+        }
+    }, [editor, onEditorReady]);
 
     return (
         <div style={{
