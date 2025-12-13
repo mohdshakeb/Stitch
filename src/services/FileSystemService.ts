@@ -100,7 +100,7 @@ const SEED_DOCUMENTS: DocumentType[] = [
         url: '',
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
-        content: '👋 Welcome to Highlight! I\'m a sticky note. You can drag me around.\n\n🔗 I was clipped from the web. Click my link icon to go back to the source.'
+        content: '<p><span data-highlight-id="seed-1" class="highlight-marker" style="--highlight-color: var(--cat-social-bg)">👋 Welcome to Highlight! I\'m a sticky note. You can drag me around.</span></p><p><span data-highlight-id="seed-2" class="highlight-marker" style="--highlight-color: var(--cat-ai-bg)">🔗 I was clipped from the web. Click my link icon to go back to the source.</span></p>'
     },
     {
         id: 'doc-2',

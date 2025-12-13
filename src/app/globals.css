@@ -114,47 +114,42 @@
   --accent: 160 15% 20%;
 
   /* --- Category Colors (Dark Mode) --- */
-  /* Logic: Darker backgrounds (less saturation), Lighter text */
+  /* Logic: Darker backgrounds, very subtle tinted off-white text (Shade 50) */
 
   /* Social: Dark Ochre */
   --cat-social-bg: #422006;
-  /* deep brown/yellow */
-  --cat-social-text: #fef3c7;
-  /* light yellow text */
+  --cat-social-text: #fffbeb;
+  /* Amber 50 - Subtle Warm White */
   --cat-social-border: #78350f;
 
   /* Article: Dark Green */
   --cat-article-bg: #052e16;
-  /* deep green */
-  --cat-article-text: #dcfce7;
-  /* light green text */
+  --cat-article-text: #ecfdf5;
+  /* Emerald 50 - Subtle Cool White */
   --cat-article-border: #14532d;
 
   /* Academic: Dark Purple */
   --cat-academic-bg: #3b0764;
-  /* deep purple */
-  --cat-academic-text: #f3e8ff;
-  /* light purple text */
+  --cat-academic-text: #faf5ff;
+  /* Purple 50 - Subtle Lavender White */
   --cat-academic-border: #581c87;
 
   /* AI: Dark Blue */
   --cat-ai-bg: #172554;
-  /* deep blue */
-  --cat-ai-text: #dbeafe;
-  /* light blue text */
+  --cat-ai-text: #eff6ff;
+  /* Blue 50 - Subtle Blue White */
   --cat-ai-border: #1e3a8a;
 
   /* Other: Dark Grey */
   --cat-other-bg: #1f2937;
-  /* deep grey */
-  --cat-other-text: #f3f4f6;
-  /* light grey text */
+  --cat-other-text: #f9fafb;
+  /* Gray 50 - Pure Off-White */
   --cat-other-border: #374151;
 
   /* Text Highlight Color */
   --highlight-bg: #422006;
-  /* Dark Ochre (same as social bg essentially) */
-  --highlight-text: #fef3c7;
+  --highlight-text: #fffbeb;
+  /* Match Social (Warm White) */
 }
 
 * {
