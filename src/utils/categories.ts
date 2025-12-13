@@ -9,33 +9,33 @@ interface CategoryConfig {
 
 export const CATEGORY_CONFIG: Record<Category, CategoryConfig> = {
     social: {
-        color: '#fef3c7', // Yellow
-        textColor: '#451a03',
-        borderColor: '#fcd34d',
+        color: 'var(--cat-social-bg)',
+        textColor: 'var(--cat-social-text)',
+        borderColor: 'var(--cat-social-border)',
         label: 'Social Media'
     },
     article: {
-        color: '#dcfce7', // Green
-        textColor: '#14532d',
-        borderColor: '#86efac',
+        color: 'var(--cat-article-bg)',
+        textColor: 'var(--cat-article-text)',
+        borderColor: 'var(--cat-article-border)',
         label: 'Article'
     },
     academic: {
-        color: '#f3e8ff', // Purple
-        textColor: '#581c87',
-        borderColor: '#d8b4fe',
+        color: 'var(--cat-academic-bg)',
+        textColor: 'var(--cat-academic-text)',
+        borderColor: 'var(--cat-academic-border)',
         label: 'Academic/Wiki'
     },
     ai: {
-        color: '#dbeafe', // Blue (repurposed from video)
-        textColor: '#1e3a8a',
-        borderColor: '#93c5fd',
+        color: 'var(--cat-ai-bg)',
+        textColor: 'var(--cat-ai-text)',
+        borderColor: 'var(--cat-ai-border)',
         label: 'AI Tool'
     },
     other: {
-        color: '#f3f4f6', // Grey for generic web content
-        textColor: '#1f2937',
-        borderColor: '#e5e7eb',
+        color: 'var(--cat-other-bg)',
+        textColor: 'var(--cat-other-text)',
+        borderColor: 'var(--cat-other-border)',
         label: 'Web'
     }
 };

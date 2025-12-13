@@ -64,12 +64,12 @@ const SEED_HIGHLIGHTS: HighlightType[] = [
     {
         id: 'seed-1',
         text: '👋 Welcome to Highlight! I\'m a sticky note. You can drag me around.',
-        url: 'https://example.com/welcome',
+        url: 'https://example.com/welcome', // social domain logic fallback
         title: 'Welcome Guide',
         favicon: 'https://www.google.com/s2/favicons?domain=example.com',
         createdAt: new Date().toISOString(),
         tags: [],
-        color: '#fef3c7', // Yellow
+        color: 'var(--cat-social-bg)', // Yellow (Social)
     },
     {
         id: 'seed-2',
@@ -79,7 +79,7 @@ const SEED_HIGHLIGHTS: HighlightType[] = [
         favicon: 'https://www.google.com/s2/favicons?domain=wikipedia.org',
         createdAt: new Date().toISOString(),
         tags: [],
-        color: '#dbeafe', // Blue
+        color: 'var(--cat-ai-bg)', // Blue (AI)
     },
     {
         id: 'seed-3',
@@ -89,7 +89,7 @@ const SEED_HIGHLIGHTS: HighlightType[] = [
         favicon: 'https://www.google.com/s2/favicons?domain=notion.so',
         createdAt: new Date().toISOString(),
         tags: [],
-        color: '#dcfce7', // Green
+        color: 'var(--cat-article-bg)', // Green (Article)
     }
 ];
 
@@ -337,53 +337,12 @@ export class FileSystemService {
     private async seedData(initialHighlights?: HighlightType[]): Promise<void> {
         // If initialHighlights provided (Sync or Clone), we always WRITE using them.
         if (initialHighlights && initialHighlights.length > 0) {
-            // Check if we need to reset documents (Clone case) vs Preserve (Sync case)
-            // Wait, existing logic for CLONE reset document IDs. 
-            // For SYNC (Switch), we probably want to PRESERVE relationships if they map to Valid Docs?
-            // But documents aren't synced. So any documentID pointing to a doc in Source that doesn't exist in Target is invalid.
-            // So sanitizing IDs is correct for both Cloning (New) AND Sync (Switch).
-
-            // However, we must be careful:
-            // if we are switching to an EXISTING workspace that HAS documents, 
-            // and we bring in a note that ALREADY existed there and WAS assigned to a doc,
-            // we don't want to wipe its assignment!
-
-            // Refined Sync Logic:
-            // The 'mergedHighlights' passed from switchToWorkspace already handles the merge.
-            // But 'seedData' logic attempts to 'sanitize'.
-            // If we are just writing the merged list, we should trust the caller (switchToWorkspace) to have prepared it?
-            // OR we should just write it as is.
-
-            // Let's change seedData to be dumber:
-            // If initialHighlights passed -> Write it exactly as is (caller handles logic).
-            // But wait, the CLONE logic relied on this function to sanitize.
-            // I should move the sanitization logic to 'createWorkspace' and 'switchToWorkspace' (if needed) 
-            // and make seedData just a writer.
-
-            // Actually, for now, let's keep the sanitization HERE but only if it's a "Clone" (Create)?
-            // Distinguishing Clone vs Sync:
-            // CreateWorkspace -> Clone.
-            // SwitchToWorkspace -> Sync.
-
-            // Implementing a simpler fix:
-            // For Sync (Switch), we want to merge. The 'mergedHighlights' passed in are ALREADY merged.
-            // They include:
-            // 1. Target's existing notes (with valid doc IDs for that workspace)
-            // 2. Source's incoming notes (which might have doc IDs valid in Source but invalid in Target).
-
-            // We should sanitize ONLY the incoming notes?
-            // Accessing 'mergedHighlights' blindly here is tricky.
-
-            // BETTER APPROACH:
-            // Modify seedData to blindly write 'initialHighlights' if provided.
-            // Move the "Sanitize" logic to the CALLER (createWorkspace).
-            // This makes seedData a true "Seeder/Writer".
-
             console.log('Writing provided highlights (Sync/Clone)...');
             await this.writeJsonFile(HIGHLIGHTS_FILE, initialHighlights);
         } else {
-            // Default Seeding (only if file missing)
-            const highlights = await this.readJsonFile<HighlightType[]>(HIGHLIGHTS_FILE, null as any);
+            // Default Seeding or Migration
+            let highlights = await this.readJsonFile<HighlightType[]>(HIGHLIGHTS_FILE, null as any);
+
             if (!highlights) {
                 console.log('Seeding default highlights...');
                 // Default Seed logic
@@ -392,6 +351,29 @@ export class FileSystemService {
                     documentId: h.id === 'seed-3' ? null : 'doc-1'
                 }));
                 await this.writeJsonFile(HIGHLIGHTS_FILE, seededHighlights);
+            } else {
+                // MIGRATION: Check if we have legacy hex colors for seed notes and update them
+                let needsUpdate = false;
+                const legacyColors: Record<string, string> = {
+                    '#fef3c7': 'var(--cat-social-bg)',
+                    '#dbeafe': 'var(--cat-ai-bg)',
+                    '#dcfce7': 'var(--cat-article-bg)'
+                };
+
+                highlights = highlights.map(h => {
+                    // Only target known seed IDs to avoid messing with user data too much, 
+                    // though generally migrating these hexes is safe if they match exactly.
+                    if ((h.id === 'seed-1' || h.id === 'seed-2' || h.id === 'seed-3') && h.color && legacyColors[h.color]) {
+                        needsUpdate = true;
+                        return { ...h, color: legacyColors[h.color] };
+                    }
+                    return h;
+                });
+
+                if (needsUpdate) {
+                    console.log('Migrating legacy seed colors...');
+                    await this.writeJsonFile(HIGHLIGHTS_FILE, highlights);
+                }
             }
         }
 

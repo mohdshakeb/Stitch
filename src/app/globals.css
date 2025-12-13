@@ -58,11 +58,40 @@
   /* Typography */
   --font-sans: 'Inter', sans-serif;
   --font-heading: 'Outfit', sans-serif;
+
+  /* --- Category Colors (Light Mode) --- */
+  /* Social: Yellow */
+  --cat-social-bg: #fef3c7;
+  --cat-social-text: #451a03;
+  --cat-social-border: #fcd34d;
+
+  /* Article: Green */
+  --cat-article-bg: #dcfce7;
+  --cat-article-text: #14532d;
+  --cat-article-border: #86efac;
+
+  /* Academic: Purple */
+  --cat-academic-bg: #f3e8ff;
+  --cat-academic-text: #581c87;
+  --cat-academic-border: #d8b4fe;
+
+  /* AI: Blue */
+  --cat-ai-bg: #dbeafe;
+  --cat-ai-text: #1e3a8a;
+  --cat-ai-border: #93c5fd;
+
+  /* Other: Grey */
+  --cat-other-bg: #f3f4f6;
+  --cat-other-text: #1f2937;
+  --cat-other-border: #e5e7eb;
+
+  /* Text Highlight Color */
+  --highlight-bg: #fef3c7;
+  --highlight-text: inherit;
 }
 
 [data-theme='dark'] {
-  /* Background: Deep Green-Grey (Complementary to accent) */
-  /* Hue 160 (Greenish), Low Saturation (6-10%) for a "tinted neutral" look */
+  /* Background: Deep Green-Grey */
   --background: 160 10% 5%;
 
   /* Surface: Slightly lighter Green-Grey */
@@ -80,10 +109,52 @@
   /* Primary: Same Unified Green */
   --primary: 160 84% 39%;
   --primary-foreground: 0 0% 100%;
-  /* White text */
 
   /* Accent: Darker Teal Grey */
   --accent: 160 15% 20%;
+
+  /* --- Category Colors (Dark Mode) --- */
+  /* Logic: Darker backgrounds (less saturation), Lighter text */
+
+  /* Social: Dark Ochre */
+  --cat-social-bg: #422006;
+  /* deep brown/yellow */
+  --cat-social-text: #fef3c7;
+  /* light yellow text */
+  --cat-social-border: #78350f;
+
+  /* Article: Dark Green */
+  --cat-article-bg: #052e16;
+  /* deep green */
+  --cat-article-text: #dcfce7;
+  /* light green text */
+  --cat-article-border: #14532d;
+
+  /* Academic: Dark Purple */
+  --cat-academic-bg: #3b0764;
+  /* deep purple */
+  --cat-academic-text: #f3e8ff;
+  /* light purple text */
+  --cat-academic-border: #581c87;
+
+  /* AI: Dark Blue */
+  --cat-ai-bg: #172554;
+  /* deep blue */
+  --cat-ai-text: #dbeafe;
+  /* light blue text */
+  --cat-ai-border: #1e3a8a;
+
+  /* Other: Dark Grey */
+  --cat-other-bg: #1f2937;
+  /* deep grey */
+  --cat-other-text: #f3f4f6;
+  /* light grey text */
+  --cat-other-border: #374151;
+
+  /* Text Highlight Color */
+  --highlight-bg: #422006;
+  /* Dark Ochre (same as social bg essentially) */
+  --highlight-text: #fef3c7;
 }
 
 * {
@@ -179,12 +250,18 @@ a {
 
 /* Semantic Highlight Style (Permanent) */
 .highlight-marker {
-  /* Default to yellow if no variable provided */
-  --highlight-color: #fef3c7;
+  /* 
+     Priority: 
+     1. --highlight-color (Inline style from JS, specific to the note)
+     2. --highlight-bg (Theme default, dark/light mode aware)
+     3. #fef3c7 (Absolute fallback)
+  */
+  /* background-color removed to allow gradient animation to be visible over transparent bg */
+
+  color: var(--highlight-text, inherit);
 
   /* Sliding Gradient Technique */
-  /* 200% width: 50% color (left), 50% transparent (right) */
-  background-image: linear-gradient(120deg, var(--highlight-color) 50%, transparent 50%);
+  background-image: linear-gradient(120deg, var(--highlight-color, var(--highlight-bg, #fef3c7)) 50%, transparent 50%);
   background-repeat: no-repeat;
   background-size: 200% 100%;
   background-position: 0 0;
@@ -192,15 +269,10 @@ a {
   border-radius: 2px;
 }
 
-[data-theme='dark'] .highlight-marker {
-  --highlight-color: #583e08;
-  color: #fff;
-}
-
-/* Entrance Animation (Temporary) */
+/* Entrance Animation */
 .highlight-animate {
   animation: highlight-swipe var(--highlight-duration, 1s) ease forwards;
-  background-image: linear-gradient(120deg, var(--highlight-color) 50%, transparent 50%);
+  background-image: linear-gradient(120deg, var(--highlight-color, var(--highlight-bg, #fef3c7)) 50%, transparent 50%);
   background-size: 200% 100%;
   background-position: 110% 0;
 }
