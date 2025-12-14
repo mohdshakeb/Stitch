@@ -173,123 +173,51 @@ export default function DocumentEditor({ documentId, initialTitle, initialConten
     }, [editor, onEditorReady]);
 
     return (
-        <div style={{
-            width: '100%',
-            maxWidth: '800px', // Ensure it matches parent constraint
-            margin: '0 auto',
-            // padding removed here as parent handles it
-        }}>
+        <div className="w-full max-w-[800px] mx-auto">
 
+            {/* Title */}
             {/* Title */}
             <input
                 type="text"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                style={{
-                    fontSize: '2.5rem',
-                    fontFamily: 'var(--font-heading)',
-                    fontWeight: 700,
-                    border: 'none',
-                    outline: 'none',
-                    backgroundColor: 'transparent',
-                    color: 'hsl(var(--foreground))',
-                    width: '100%',
-                    marginBottom: 'var(--space-4)',
-                    padding: 0,
-                }}
+                className="text-[2.5rem] font-heading font-bold border-none outline-none bg-transparent text-foreground w-full mb-4 p-0 placeholder:text-muted/50"
                 placeholder="Untitled"
             />
 
             {/* Floating Bubble Menu */}
             {editor && (
                 <BubbleMenu editor={editor} tippyOptions={{ duration: 100 }}>
-                    <div style={{
-                        display: 'flex',
-                        gap: '4px',
-                        padding: '8px',
-                        borderRadius: '8px',
-                        backgroundColor: 'hsl(var(--popover))',
-                        border: '1px solid hsl(var(--border))',
-                        boxShadow: 'var(--shadow-md)',
-                    }}>
+                    <div className="flex gap-1 p-2 rounded-lg bg-popover border border-border shadow-md">
                         <button
                             onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
-                            className={editor.isActive('heading', { level: 1 }) ? 'is-active' : ''}
-                            style={{
-                                padding: '4px 8px',
-                                borderRadius: '4px',
-                                backgroundColor: editor.isActive('heading', { level: 1 }) ? 'hsl(var(--accent))' : 'transparent',
-                                color: editor.isActive('heading', { level: 1 }) ? 'hsl(var(--accent-foreground))' : 'hsl(var(--foreground))',
-                                border: 'none',
-                                cursor: 'pointer',
-                                fontWeight: 'bold',
-                                fontSize: '0.875rem'
-                            }}
+                            className={`px-2 py-1 rounded border-none cursor-pointer font-bold text-sm ${editor.isActive('heading', { level: 1 }) ? 'bg-accent text-accent-foreground' : 'bg-transparent text-foreground hover:bg-muted/10'}`}
                         >
                             H1
                         </button>
                         <button
                             onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
-                            className={editor.isActive('heading', { level: 2 }) ? 'is-active' : ''}
-                            style={{
-                                padding: '4px 8px',
-                                borderRadius: '4px',
-                                backgroundColor: editor.isActive('heading', { level: 2 }) ? 'hsl(var(--accent))' : 'transparent',
-                                color: editor.isActive('heading', { level: 2 }) ? 'hsl(var(--accent-foreground))' : 'hsl(var(--foreground))',
-                                border: 'none',
-                                cursor: 'pointer',
-                                fontWeight: 'bold',
-                                fontSize: '0.875rem'
-                            }}
+                            className={`px-2 py-1 rounded border-none cursor-pointer font-bold text-sm ${editor.isActive('heading', { level: 2 }) ? 'bg-accent text-accent-foreground' : 'bg-transparent text-foreground hover:bg-muted/10'}`}
                         >
                             H2
                         </button>
-                        <div style={{ width: '1px', backgroundColor: 'hsl(var(--border))', margin: '0 4px' }} />
+                        <div className="w-px bg-border mx-1" />
                         <button
                             onClick={() => editor.chain().focus().toggleBold().run()}
-                            className={editor.isActive('bold') ? 'is-active' : ''}
-                            style={{
-                                padding: '4px 8px',
-                                borderRadius: '4px',
-                                backgroundColor: editor.isActive('bold') ? 'hsl(var(--accent))' : 'transparent',
-                                color: editor.isActive('bold') ? 'hsl(var(--accent-foreground))' : 'hsl(var(--foreground))',
-                                border: 'none',
-                                cursor: 'pointer',
-                                fontWeight: 'bold',
-                                fontSize: '0.875rem'
-                            }}
+                            className={`px-2 py-1 rounded border-none cursor-pointer font-bold text-sm ${editor.isActive('bold') ? 'bg-accent text-accent-foreground' : 'bg-transparent text-foreground hover:bg-muted/10'}`}
                         >
                             B
                         </button>
                         <button
                             onClick={() => editor.chain().focus().toggleItalic().run()}
-                            className={editor.isActive('italic') ? 'is-active' : ''}
-                            style={{
-                                padding: '4px 8px',
-                                borderRadius: '4px',
-                                backgroundColor: editor.isActive('italic') ? 'hsl(var(--accent))' : 'transparent',
-                                color: editor.isActive('italic') ? 'hsl(var(--accent-foreground))' : 'hsl(var(--foreground))',
-                                border: 'none',
-                                cursor: 'pointer',
-                                fontStyle: 'italic',
-                                fontSize: '0.875rem'
-                            }}
+                            className={`px-2 py-1 rounded border-none cursor-pointer italic text-sm ${editor.isActive('italic') ? 'bg-accent text-accent-foreground' : 'bg-transparent text-foreground hover:bg-muted/10'}`}
                         >
                             I
                         </button>
-                        <div style={{ width: '1px', backgroundColor: 'hsl(var(--border))', margin: '0 4px' }} />
+                        <div className="w-px bg-border mx-1" />
                         <button
                             onClick={() => editor.chain().focus().toggleBulletList().run()}
-                            className={editor.isActive('bulletList') ? 'is-active' : ''}
-                            style={{
-                                padding: '4px 8px',
-                                borderRadius: '4px',
-                                backgroundColor: editor.isActive('bulletList') ? 'hsl(var(--accent))' : 'transparent',
-                                color: editor.isActive('bulletList') ? 'hsl(var(--accent-foreground))' : 'hsl(var(--foreground))',
-                                border: 'none',
-                                cursor: 'pointer',
-                                fontSize: '0.875rem'
-                            }}
+                            className={`px-2 py-1 rounded border-none cursor-pointer text-sm ${editor.isActive('bulletList') ? 'bg-accent text-accent-foreground' : 'bg-transparent text-foreground hover:bg-muted/10'}`}
                         >
                             • List
                         </button>

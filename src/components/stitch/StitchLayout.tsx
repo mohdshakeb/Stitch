@@ -7,23 +7,9 @@ interface StitchLayoutProps {
 
 export default function StitchLayout({ children }: StitchLayoutProps) {
     return (
-        <main style={{
-            height: '100vh',
-            overflow: 'hidden',
-            display: 'flex',
-            justifyContent: 'center',
-            backgroundColor: 'hsl(var(--background))',
-        }}>
+        <main className="h-screen overflow-hidden flex justify-center bg-background">
             <Header />
-            <div style={{
-                display: 'flex',
-                width: 'fit-content', // Only take up needed space
-                maxWidth: '100%',
-                padding: '0 24px', // Requested 24px padding
-                gap: '24px', // Reduced gap
-                justifyContent: 'center',
-                minWidth: '1200px', // Prevent layout shift below 1200px
-            }}>
+            <div className="flex w-fit max-w-full px-6 gap-6 justify-center min-w-[1200px]">
                 {children}
             </div>
         </main>

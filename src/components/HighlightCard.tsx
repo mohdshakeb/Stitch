@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getCategoryStyles } from '@/utils/categories';
+import { RiCheckLine } from '@remixicon/react';
 
 interface HighlightProps {
     id: string;
@@ -124,19 +125,7 @@ export default function HighlightCard({
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0, transition: { delay: 0.15, duration: 0.15 } }} // Wait for note to exit
                 transition={{ duration: 0.15 }} // Default duration for entry
-                style={{
-                    position: 'fixed',
-                    top: 0,
-                    left: 0,
-                    width: '100vw',
-                    height: '100vh',
-                    backgroundColor: 'hsl(var(--background) / 0.75)',
-                    display: 'flex',
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    zIndex: 9999,
-                    backdropFilter: 'blur(8px)',
-                }}
+                className="fixed top-0 left-0 w-screen h-screen bg-background/75 flex justify-center items-center z-[9999] backdrop-blur-md"
                 onClick={() => setIsExpanded(false)}
             >
                 <motion.div
@@ -153,79 +142,42 @@ export default function HighlightCard({
                         transition: { type: 'spring', stiffness: 500, damping: 30, delay: 0 } // No delay on exit
                     }}
                     onClick={(e) => e.stopPropagation()}
+                    onClick={(e) => e.stopPropagation()}
+                    className="w-[90%] max-w-[500px] aspect-square rounded p-10 shadow-xl flex flex-col relative -rotate-1"
                     style={{
                         backgroundColor: styles.color,
-                        width: '90%',
-                        maxWidth: '500px',
-                        aspectRatio: '1 / 1',
-                        borderRadius: '4px',
-                        padding: '40px',
-                        boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        position: 'relative',
                         color: styles.textColor,
-                        transform: 'rotate(-1deg)',
                     }}
                 >
                     <button
                         onClick={() => setIsExpanded(false)}
-                        style={{
-                            position: 'absolute',
-                            top: '16px',
-                            right: '16px',
-                            background: 'none',
-                            border: 'none',
-                            fontSize: '1.5rem',
-                            cursor: 'pointer',
-                            color: styles.textColor,
-                            opacity: 0.6,
-                        }}
+                        className="absolute top-4 right-4 bg-transparent border-none text-2xl cursor-pointer opacity-60 hover:opacity-100 transition-opacity"
+                        style={{ color: styles.textColor }}
                     >
                         ×
                     </button>
 
-                    <blockquote style={{
-                        fontSize: '1.25rem',
-                        lineHeight: '1.6',
-                        fontFamily: 'var(--font-heading)',
-                        margin: 0,
-                        flex: 1,
-                        overflowY: 'auto',
-                        whiteSpace: 'pre-wrap',
-                        paddingRight: '10px',
-                    }}>
+                    <blockquote className="text-xl leading-relaxed font-heading m-0 flex-1 overflow-y-auto whitespace-pre-wrap pr-2.5">
                         {text}
                     </blockquote>
 
-                    <div style={{
-                        marginTop: '24px',
-                        paddingTop: '16px',
-                        borderTop: `1px solid ${styles.textColor}40`,
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center'
-                    }}>
+                    <div className="mt-6 pt-4 border-t flex justify-between items-center" style={{ borderColor: `${styles.textColor}40` }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                             {favicon && (
                                 // eslint-disable-next-line @next/next/no-img-element
-                                <img src={favicon} alt="" style={{ width: 24, height: 24, borderRadius: 4 }} />
+                                <img src={favicon} alt="" className="w-6 h-6 rounded" />
                             )}
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
                                 <a
                                     href={url}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    style={{
-                                        fontSize: '0.875rem',
-                                        fontWeight: 600,
-                                        color: styles.textColor,
-                                        textDecoration: 'none',
-                                    }}
+                                    className="text-sm font-semibold no-underline hover:underline"
+                                    style={{ color: styles.textColor }}
                                 >
                                     {title || new URL(url).hostname}
                                 </a>
-                                <span style={{ fontSize: '0.75rem', opacity: 0.8 }}>
+                                <span className="text-xs opacity-80" style={{ color: styles.textColor }}>
                                     {date}
                                 </span>
                             </div>
@@ -242,100 +194,53 @@ export default function HighlightCard({
     return (
         <>
             <div
-                className="card"
+                className={`relative border-none rounded-2xl shadow-md p-6 transition-all duration-200 aspect-square flex flex-col cursor-grab ${showActions ? 'z-20 shadow-xl scale-105 -rotate-1' : 'z-1 rotate-0'}`}
                 onClick={handleCardClick}
                 onMouseEnter={() => setShowActions(true)}
                 onMouseLeave={() => setShowActions(false)}
                 style={{
-                    position: 'relative',
                     backgroundColor: bg,
-                    border: 'none',
-                    borderRadius: '2px',
-                    boxShadow: '2px 2px 5px rgba(0,0,0,0.1)',
-                    padding: '12px',
-                    transition: 'transform 0.2s ease, box-shadow 0.2s ease',
-                    transform: showActions ? 'scale(1.05) rotate(-2deg)' : 'rotate(0deg)',
                     color: styles.textColor,
-                    aspectRatio: '1 / 1',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    zIndex: showActions ? 20 : 1,
-                    cursor: 'grab',
                 }}
             >
                 {showActions && (
-                    <div style={{
-                        position: 'absolute',
-                        top: '-12px',
-                        right: '-12px',
-                        display: 'flex',
-                        gap: '4px',
-                        zIndex: 10,
-                    }} onClick={(e) => e.stopPropagation()}>
+                    <div
+                        className="absolute -top-3 -right-3 flex gap-1 z-10"
+                        onClick={(e) => e.stopPropagation()}
+                    >
                         <button
                             onClick={handleDelete}
-                            style={{
-                                width: '24px',
-                                height: '24px',
-                                borderRadius: '50%',
-                                border: '1px solid hsl(var(--border))',
-                                backgroundColor: 'hsl(var(--border))',
-                                color: 'hsl(var(--foreground))',
-                                fontSize: '1rem',
-                                cursor: 'pointer',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                fontWeight: 'bold',
-                                boxShadow: 'var(--shadow-sm)',
-                            }}
+                            className="w-6 h-6 rounded-full border border-border bg-border text-foreground text-base cursor-pointer flex items-center justify-center font-bold shadow-sm hover:bg-red-500 hover:text-white hover:border-red-500 transition-colors"
                         >
                             −
                         </button>
                     </div>
                 )}
 
-                <blockquote style={{
-                    fontSize: '0.875rem',
-                    lineHeight: '1.4',
-                    fontFamily: 'var(--font-heading)',
-                    color: styles.textColor,
-                    borderLeft: 'none',
-                    paddingLeft: 0,
-                    margin: 0,
-                    marginBottom: '16px', // Ensure margin is applied
-                    overflow: 'hidden',
-                    display: '-webkit-box',
-                    WebkitLineClamp: 6,
-                    WebkitBoxOrient: 'vertical',
-                }}>
+                <blockquote
+                    className="text-sm leading-relaxed font-heading m-0 mb-4 overflow-hidden border-none p-0 line-clamp-6"
+                    style={{ color: styles.textColor }}
+                >
                     {text}
                 </blockquote>
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', marginTop: 'auto', opacity: 0.7 }}>
+                <div className="flex items-center gap-2 mt-auto opacity-70">
                     {favicon && (
                         // eslint-disable-next-line @next/next/no-img-element
-                        <img src={favicon} alt="" style={{ width: 16, height: 16, borderRadius: 2 }} />
+                        <img src={favicon} alt="" className="w-4 h-4 rounded-sm" />
                     )}
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 0, overflow: 'hidden' }}>
+                    <div className="flex flex-col overflow-hidden">
                         <a
                             href={url}
                             target="_blank"
                             rel="noopener noreferrer"
                             onClick={(e) => e.stopPropagation()}
-                            style={{
-                                fontSize: '0.75rem',
-                                fontWeight: 600,
-                                whiteSpace: 'nowrap',
-                                overflow: 'hidden',
-                                textOverflow: 'ellipsis',
-                                color: styles.textColor,
-                                textDecoration: 'none',
-                            }}
+                            className="text-xs font-semibold whitespace-nowrap overflow-hidden text-ellipsis no-underline hover:underline"
+                            style={{ color: styles.textColor }}
                         >
                             {title || new URL(url).hostname}
                         </a>
-                        <span style={{ fontSize: '0.7rem', color: styles.textColor, opacity: 0.8 }}>
+                        <span className="text-[0.7rem] opacity-80" style={{ color: styles.textColor }}>
                             {date}
                         </span>
                     </div>
@@ -343,19 +248,9 @@ export default function HighlightCard({
 
                 {/* Assignment Indicator */}
                 {(documentId || (documentIds && documentIds.length > 0)) && (
-                    <div style={{
-                        marginTop: '8px',
-                        paddingTop: '8px',
-                        borderTop: `1px solid ${styles.textColor}20`,
-                        fontSize: '0.7rem',
-                        color: styles.textColor,
-                        fontWeight: 500,
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '4px',
-                    }}>
-                        <i className="ri-check-line"></i>
-                        <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    <div className="mt-2 pt-2 border-t text-[0.7rem] font-medium flex items-center gap-1" style={{ borderColor: `${styles.textColor}20`, color: styles.textColor }}>
+                        <RiCheckLine size={14} />
+                        <span className="whitespace-nowrap overflow-hidden text-ellipsis">
                             Added to {(() => {
                                 const ids = documentIds && documentIds.length > 0 ? documentIds : (documentId ? [documentId] : []);
                                 const lastId = ids[ids.length - 1];
@@ -364,8 +259,8 @@ export default function HighlightCard({
 
                                 return (
                                     <>
-                                        <span style={{ fontWeight: 600 }}>{doc?.title || 'Document'}</span>
-                                        {extra > 0 && <span style={{ opacity: 0.7, marginLeft: '4px' }}>+{extra}</span>}
+                                        <span className="font-semibold">{doc?.title || 'Document'}</span>
+                                        {extra > 0 && <span className="opacity-70 ml-1">+{extra}</span>}
                                     </>
                                 );
                             })()}

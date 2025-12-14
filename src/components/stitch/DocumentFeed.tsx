@@ -40,22 +40,7 @@ const DocumentFeed = forwardRef<HTMLDivElement, DocumentFeedProps>(({
     return (
         <div
             ref={ref}
-            className="document-scroll-container"
-            style={{
-                flex: 0.8,
-                height: '100vh',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                gap: '16px',
-                scrollbarWidth: 'none',
-                // Conditional styles for empty state
-                overflowY: documents.length === 0 ? 'hidden' : 'auto',
-                scrollSnapType: documents.length === 0 ? 'none' : 'y mandatory',
-                paddingTop: documents.length === 0 ? 0 : 'calc(50vh - 318px)',
-                paddingBottom: documents.length === 0 ? 0 : '50vh',
-                justifyContent: documents.length === 0 ? 'center' : 'flex-start',
-            }}
+            className={`document-scroll-container flex-[0.8] h-screen flex flex-col items-center gap-4 no-scrollbar ${documents.length === 0 ? 'overflow-y-hidden snap-none pt-0 pb-0 justify-center' : 'overflow-y-auto snap-y snap-mandatory pt-[calc(50vh-318px)] pb-[50vh] justify-start'}`}
         >
             {documents.map((doc) => (
                 <DocumentPreviewCard
@@ -75,57 +60,15 @@ const DocumentFeed = forwardRef<HTMLDivElement, DocumentFeedProps>(({
             ))}
 
             {documents.length === 0 && (
-                <div style={{
-                    width: '100%',
-                    maxWidth: '650px',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    padding: '0 20px',
-                }}>
+                <div className="w-full max-w-[650px] flex flex-col items-center px-5">
                     <div
                         onClick={handleCreateDocument}
-                        style={{
-                            width: '450px', // Fixed width to prevent collapse
-                            maxWidth: '100%',
-                            aspectRatio: '1 / 1.414',
-                            border: '2px dashed hsl(var(--border))',
-                            borderRadius: 'var(--radius-sm)',
-                            display: 'flex',
-                            flexDirection: 'column',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            gap: '16px',
-                            cursor: 'pointer',
-                            color: 'hsl(var(--muted))',
-                            transition: 'all 0.2s ease',
-                            backgroundColor: 'transparent',
-                        }}
-                        onMouseEnter={(e) => {
-                            e.currentTarget.style.borderColor = 'hsl(var(--primary))';
-                            e.currentTarget.style.color = 'hsl(var(--primary))';
-                            e.currentTarget.style.backgroundColor = 'hsl(var(--primary) / 0.05)';
-                        }}
-                        onMouseLeave={(e) => {
-                            e.currentTarget.style.borderColor = 'hsl(var(--border))';
-                            e.currentTarget.style.color = 'hsl(var(--muted))';
-                            e.currentTarget.style.backgroundColor = 'transparent';
-                        }}
+                        className="w-[450px] max-w-full aspect-[1/1.414] border-2 border-dashed border-border rounded-sm flex flex-col items-center justify-center gap-4 cursor-pointer text-muted transition-all duration-200 bg-transparent hover:border-primary hover:text-primary hover:bg-primary/5"
                     >
-                        <div style={{
-                            width: '48px',
-                            height: '48px',
-                            borderRadius: '50%',
-                            border: '2px solid currentColor',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            fontSize: '24px',
-                            fontWeight: 300,
-                        }}>
+                        <div className="w-12 h-12 rounded-full border-2 border-current flex items-center justify-center text-2xl font-light">
                             +
                         </div>
-                        <span style={{ fontSize: '1rem', fontWeight: 500 }}>Create a Document</span>
+                        <span className="text-base font-medium">Create a Document</span>
                     </div>
                 </div>
             )}

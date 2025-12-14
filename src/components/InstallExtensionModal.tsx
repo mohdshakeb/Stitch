@@ -2,6 +2,7 @@
 
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useEffect } from 'react';
+import { RiDownload2Line, RiShieldCheckLine } from '@remixicon/react';
 
 interface InstallExtensionModalProps {
     isOpen: boolean;
@@ -43,34 +44,14 @@ export default function InstallExtensionModal({ isOpen, onClose }: InstallExtens
     return (
         <AnimatePresence>
             {isOpen && (
-                <div style={{
-                    position: 'fixed',
-                    top: 0,
-                    left: 0,
-                    width: '100vw',
-                    height: '100vh',
-                    zIndex: 9999,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    isolation: 'isolate', // Create new stacking context
-                }}>
+                <div className="fixed inset-0 z-[9999] flex items-center justify-center isolate">
                     {/* Backdrop */}
                     <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                         onClick={onClose}
-                        style={{
-                            position: 'fixed',
-                            top: 0,
-                            left: 0,
-                            width: '100%',
-                            height: '100%',
-                            backgroundColor: 'hsl(var(--background) / 0.8)',
-                            backdropFilter: 'blur(8px)',
-                            zIndex: -1, // Behind content
-                        }}
+                        className="fixed inset-0 w-full h-full bg-background/80 backdrop-blur-sm -z-10"
                     />
 
                     {/* Modal Content */}
@@ -79,60 +60,28 @@ export default function InstallExtensionModal({ isOpen, onClose }: InstallExtens
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.95, y: 10 }}
                         transition={{ type: 'spring', duration: 0.3 }}
-                        style={{
-                            backgroundColor: 'hsl(var(--card))',
-                            borderRadius: 'var(--radius-lg)',
-                            border: '1px solid hsl(var(--border))',
-                            width: '90%',
-                            maxWidth: '600px', // Wider easier to view video
-                            padding: '32px',
-                            boxShadow: 'var(--shadow-xl)',
-                            position: 'relative',
-                            display: 'flex',
-                            flexDirection: 'column',
-                            gap: '24px',
-                            maxHeight: '90vh',
-                            overflowY: 'auto',
-                        }}
+                        className="bg-card rounded-lg border border-border w-[90%] max-w-[600px] p-8 shadow-xl relative flex flex-col gap-6 max-h-[90vh] overflow-y-auto"
                         onClick={(e) => e.stopPropagation()}
                     >
                         {/* Close Button */}
                         <button
                             onClick={onClose}
-                            style={{
-                                position: 'absolute',
-                                top: '16px',
-                                right: '16px',
-                                background: 'none',
-                                border: 'none',
-                                cursor: 'pointer',
-                                color: 'hsl(var(--muted))',
-                                fontSize: '1.25rem',
-                            }}
+                            className="absolute top-4 right-4 bg-transparent border-none cursor-pointer text-muted text-xl hover:text-foreground transition-colors"
                         >
                             ✕
                         </button>
 
                         {/* Header */}
                         <div>
-                            <h2 style={{ fontSize: '1.5rem', fontWeight: 600, marginBottom: '8px' }}>Install Highlight Extension</h2>
-                            <p style={{ color: 'hsl(var(--muted))', lineHeight: '1.5' }}>
+                            <h2 className="text-2xl font-semibold mb-2">Install Highlight Extension</h2>
+                            <p className="text-muted leading-relaxed flex items-center">
+                                <RiShieldCheckLine size={16} className="text-muted mr-1" />
                                 Follow these steps to enable the helper extension.
                             </p>
                         </div>
 
                         {/* Video Container */}
-                        <div style={{
-                            width: '100%',
-                            aspectRatio: '16/9',
-                            backgroundColor: 'hsl(var(--muted) / 0.1)',
-                            borderRadius: 'var(--radius-md)',
-                            overflow: 'hidden',
-                            border: '1px solid hsl(var(--border))',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                        }}>
+                        <div className="w-full aspect-video bg-muted/10 rounded-md overflow-hidden border border-border flex items-center justify-center">
                             {/* Placeholder or Real Video */}
                             <video
                                 src="/install-tutorial.mp4"
@@ -140,7 +89,7 @@ export default function InstallExtensionModal({ isOpen, onClose }: InstallExtens
                                 loop
                                 muted
                                 playsInline
-                                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                className="w-full h-full object-cover"
                                 onError={(e) => {
                                     // Fallback if video missing
                                     e.currentTarget.style.display = 'none';
@@ -150,15 +99,7 @@ export default function InstallExtensionModal({ isOpen, onClose }: InstallExtens
                         </div>
 
                         {/* Steps List */}
-                        <ol style={{
-                            margin: 0,
-                            paddingLeft: '24px',
-                            color: 'hsl(var(--foreground))',
-                            display: 'flex',
-                            flexDirection: 'column',
-                            gap: '8px',
-                            fontSize: '0.95rem'
-                        }}>
+                        <ol className="m-0 pl-6 text-foreground flex flex-col gap-2 text-[0.95rem] list-decimal">
                             <li>Unzip the downloaded <strong>highlight-extension.zip</strong> file.</li>
                             <li>Open Chrome and go to <code>chrome://extensions</code></li>
                             <li>Toggle <strong>Developer mode</strong> (top right).</li>
@@ -168,27 +109,9 @@ export default function InstallExtensionModal({ isOpen, onClose }: InstallExtens
                         {/* Actions */}
                         <button
                             onClick={handleDownload}
-                            style={{
-                                width: '100%',
-                                padding: '12px',
-                                backgroundColor: 'hsl(var(--foreground))',
-                                color: 'hsl(var(--background))',
-                                border: 'none',
-                                borderRadius: 'var(--radius-md)',
-                                fontSize: '1rem',
-                                fontWeight: 500,
-                                cursor: 'pointer',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                gap: '8px',
-                                marginTop: '8px',
-                                transition: 'transform 0.1s ease',
-                            }}
-                            onMouseDown={(e) => e.currentTarget.style.transform = 'scale(0.98)'}
-                            onMouseUp={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                            className="w-full p-3 bg-foreground text-background border-none rounded-md text-base font-medium cursor-pointer flex items-center justify-center gap-2 mt-2 transition-transform duration-100 active:scale-[0.98]"
                         >
-                            <i className="ri-download-2-line"></i>
+                            <RiDownload2Line size={20} />
                             Download Extension
                         </button>
                     </motion.div>

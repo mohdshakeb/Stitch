@@ -5,6 +5,7 @@ import "./globals.css";
 import { ToastProvider } from "@/contexts/ToastContext";
 import { StorageProvider } from "@/contexts/StorageContext";
 import { ThemeProvider } from "@/components/ThemeProvider";
+import { PwaLifecycle } from "@/components/PwaLifecycle";
 
 export const metadata: Metadata = {
   title: "Highlight",
@@ -19,12 +20,14 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet" />
+        <link rel="manifest" href="/manifest.json" />
+        <meta name="theme-color" content="#ffffff" />
       </head>
       <body>
         <ThemeProvider attribute="data-theme" defaultTheme="system" enableSystem>
           <StorageProvider>
             <ToastProvider>
+              <PwaLifecycle />
               {children}
             </ToastProvider>
           </StorageProvider>

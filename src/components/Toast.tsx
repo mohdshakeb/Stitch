@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
+import { RiCloseLine } from '@remixicon/react';
 
 export interface ToastProps {
     id: string;
@@ -42,97 +43,34 @@ export default function Toast({
             exit={{ opacity: 0, y: 10, scale: 0.98 }}
             transition={{ type: 'spring', stiffness: 400, damping: 30 }}
             layout
-            style={{
-                backgroundColor: 'hsl(var(--surface))',
-                borderColor: 'hsl(var(--border))',
-                minWidth: '340px',
-                maxWidth: '420px',
-                pointerEvents: 'auto',
-                boxShadow: 'var(--shadow-lg)',
-                padding: '20px',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '12px',
-                borderRadius: '12px',
-                borderWidth: '1px',
-                borderStyle: 'solid',
-                position: 'relative',
-            }}
+            className="bg-surface border border-border min-w-[340px] max-w-[420px] pointer-events-auto shadow-lg p-5 flex flex-col gap-3 rounded-xl relative"
         >
             <button
                 onClick={() => onClose(id)}
-                style={{
-                    position: 'absolute',
-                    top: '12px',
-                    right: '12px',
-                    padding: '4px',
-                    borderRadius: '6px',
-                    background: 'none',
-                    border: 'none',
-                    cursor: 'pointer',
-                    color: 'hsl(var(--muted))',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                }}
-                onMouseEnter={(e) => {
-                    e.currentTarget.style.backgroundColor = 'rgba(0,0,0,0.05)';
-                    e.currentTarget.style.color = 'hsl(var(--foreground))';
-                }}
-                onMouseLeave={(e) => {
-                    e.currentTarget.style.backgroundColor = 'transparent';
-                    e.currentTarget.style.color = 'hsl(var(--muted))';
-                }}
+                className="absolute top-3 right-3 p-1 rounded-md bg-transparent border-none cursor-pointer text-muted flex items-center justify-center transition-colors hover:bg-black/5 hover:text-foreground"
             >
-                <i className="ri-close-line" style={{ fontSize: '1.25rem' }} />
+                <RiCloseLine size={20} />
             </button>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', paddingRight: '24px' }}>
-                <h4
-                    style={{
-                        margin: 0,
-                        fontSize: '0.9rem',
-                        fontWeight: 600,
-                        color: 'hsl(var(--foreground))',
-                        lineHeight: 1.4,
-                    }}
-                >
+            <div className="flex flex-col gap-1 pr-6">
+                <h4 className="m-0 text-sm font-semibold text-foreground leading-snug">
                     {message}
                 </h4>
                 {description && (
-                    <p
-                        style={{
-                            margin: 0,
-                            fontSize: '0.85rem',
-                            color: 'hsl(var(--muted))', // Slightly darker than standard muted for readability
-                            lineHeight: 1.5,
-                        }}
-                    >
+                    <p className="m-0 text-[0.85rem] text-muted leading-normal">
                         {description}
                     </p>
                 )}
             </div>
 
             {action && (
-                <div style={{ display: 'flex', justifyContent: 'flex-start', marginTop: '4px' }}>
+                <div className="flex justify-start mt-1">
                     <button
                         onClick={() => {
                             action.onClick();
                             onClose(id);
                         }}
-                        style={{
-                            fontSize: '0.8rem',
-                            fontWeight: 500,
-                            padding: '6px 12px',
-                            borderRadius: '6px',
-                            backgroundColor: 'hsl(var(--foreground))',
-                            color: 'hsl(var(--surface))',
-                            border: 'none',
-                            cursor: 'pointer',
-                            transition: 'opacity 0.2s',
-                        }}
-                        onMouseEnter={(e) => e.currentTarget.style.opacity = '0.9'}
-                        onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
+                        className="text-xs font-medium px-3 py-1.5 rounded-md bg-foreground text-surface border-none cursor-pointer transition-opacity hover:opacity-90 active:opacity-100"
                     >
                         {action.label}
                     </button>
@@ -140,22 +78,10 @@ export default function Toast({
             )}
 
             {!action && onUndo && (
-                <div style={{ display: 'flex', justifyContent: 'flex-start', marginTop: '4px' }}>
+                <div className="flex justify-start mt-1">
                     <button
                         onClick={onUndo}
-                        style={{
-                            fontSize: '0.8rem',
-                            fontWeight: 500,
-                            padding: '6px 12px',
-                            borderRadius: '6px',
-                            backgroundColor: 'hsl(var(--foreground))',
-                            color: 'hsl(var(--surface))',
-                            border: 'none',
-                            cursor: 'pointer',
-                            transition: 'opacity 0.2s',
-                        }}
-                        onMouseEnter={(e) => e.currentTarget.style.opacity = '0.9'}
-                        onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
+                        className="text-xs font-medium px-3 py-1.5 rounded-md bg-foreground text-surface border-none cursor-pointer transition-opacity hover:opacity-90 active:opacity-100"
                     >
                         Undo
                     </button>

@@ -13,75 +13,29 @@ interface SourcesSidebarProps {
 
 export default function SourcesSidebar({ highlights }: SourcesSidebarProps) {
     return (
-        <aside style={{
-            width: '280px',
-            height: 'fit-content',
-        }}>
-            <div style={{
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 'var(--space-2)',
-            }}>
+        <aside className="w-[280px] h-fit">
+            <div className="flex flex-col gap-2">
                 {highlights.map((highlight) => (
                     <a
                         key={highlight.id}
                         href={highlight.url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 'var(--space-2)',
-                            padding: 'var(--space-2)',
-                            borderRadius: 'var(--radius-md)',
-                            backgroundColor: 'hsl(var(--surface))',
-                            border: '1px solid hsl(var(--border))',
-                            textDecoration: 'none',
-                            transition: 'all 0.2s ease',
-                        }}
-                        onMouseEnter={(e) => {
-                            e.currentTarget.style.borderColor = 'hsl(var(--primary))';
-                            e.currentTarget.style.backgroundColor = 'hsl(var(--primary) / 0.05)';
-                        }}
-                        onMouseLeave={(e) => {
-                            e.currentTarget.style.borderColor = 'hsl(var(--border))';
-                            e.currentTarget.style.backgroundColor = 'hsl(var(--surface))';
-                        }}
+                        className="flex items-center gap-2 p-2 rounded-md bg-surface border border-border no-underline transition-all duration-200 hover:border-primary hover:bg-primary/5"
                     >
                         {highlight.favicon && (
                             // eslint-disable-next-line @next/next/no-img-element
                             <img
                                 src={highlight.favicon}
                                 alt=""
-                                style={{
-                                    width: 16,
-                                    height: 16,
-                                    borderRadius: 2,
-                                    flexShrink: 0,
-                                }}
+                                className="w-4 h-4 rounded-sm shrink-0"
                             />
                         )}
-                        <div style={{
-                            overflow: 'hidden',
-                            flex: 1,
-                        }}>
-                            <div style={{
-                                fontSize: '0.875rem',
-                                fontWeight: 500,
-                                color: 'hsl(var(--foreground))',
-                                whiteSpace: 'nowrap',
-                                overflow: 'hidden',
-                                textOverflow: 'ellipsis',
-                            }}>
+                        <div className="overflow-hidden flex-1">
+                            <div className="text-sm font-medium text-foreground whitespace-nowrap overflow-hidden text-ellipsis">
                                 {highlight.title || new URL(highlight.url).hostname}
                             </div>
-                            <div style={{
-                                fontSize: '0.75rem',
-                                color: 'hsl(var(--muted))',
-                                whiteSpace: 'nowrap',
-                                overflow: 'hidden',
-                                textOverflow: 'ellipsis',
-                            }}>
+                            <div className="text-xs text-muted whitespace-nowrap overflow-hidden text-ellipsis">
                                 {new URL(highlight.url).hostname}
                             </div>
                         </div>

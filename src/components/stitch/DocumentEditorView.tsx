@@ -7,6 +7,7 @@ import Header from '@/components/Header';
 import SourcesSidebar from '@/components/SourcesSidebar';
 import { DocumentType, HighlightType } from '@/services/FileSystemService';
 import { Editor } from '@tiptap/react';
+import { RiFilePdfLine, RiFileCopyLine } from '@remixicon/react';
 
 interface DocumentEditorViewProps {
     editingDoc: DocumentType | undefined;
@@ -71,14 +72,14 @@ export default function DocumentEditorView({
 
     if (!editingDoc && documents.length > 0) {
         return (
-            <div style={{ padding: '2rem', textAlign: 'center' }}>
+            <div className="p-8 text-center">
                 <Header variant="back" />
                 <p>Document not found (ID: {editingDocId})</p>
                 <button
                     onClick={() => {
                         router.push('/');
                     }}
-                    style={{ marginTop: '1rem', padding: '8px 16px', cursor: 'pointer' }}
+                    className="mt-4 px-4 py-2 cursor-pointer bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"
                 >
                     Go Back
                 </button>
@@ -88,77 +89,31 @@ export default function DocumentEditorView({
 
     if (editingDoc) {
         return (
-            <div style={{
-                display: 'flex',
-                minHeight: '100vh',
-                backgroundColor: 'hsl(var(--background))',
-                gap: '24px',
-                padding: '80px var(--space-4) var(--space-8)',
-                justifyContent: 'center',
-                alignItems: 'flex-start',
-                minWidth: '1200px',
-            }}>
+            <div className="flex min-h-screen bg-background gap-6 pt-20 px-4 pb-8 justify-center items-start min-w-[1200px]">
                 <Header
                     variant="back"
                     actions={
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <div className="flex items-center gap-1">
                             <button
                                 onClick={() => handlePrint()}
-                                style={{
-                                    background: 'none',
-                                    border: 'none',
-                                    cursor: 'pointer',
-                                    padding: '8px',
-                                    borderRadius: '50%',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    color: 'hsl(var(--foreground))',
-                                    transition: 'background-color 0.2s ease',
-                                }}
-                                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'hsl(var(--muted) / 0.1)'}
-                                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                                className="bg-transparent border-none cursor-pointer p-2 rounded-full flex items-center justify-center text-foreground transition-colors duration-200 hover:bg-muted/10"
                                 title="Export to PDF"
                             >
-                                <i className="ri-file-pdf-line" style={{ fontSize: '1rem' }}></i>
+                                <RiFilePdfLine size={16} />
                             </button>
                             <button
                                 onClick={handleCopy}
-                                style={{
-                                    background: 'none',
-                                    border: 'none',
-                                    cursor: 'pointer',
-                                    padding: '8px',
-                                    borderRadius: '50%',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    color: 'hsl(var(--foreground))',
-                                    transition: 'background-color 0.2s ease',
-                                }}
-                                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'hsl(var(--muted) / 0.1)'}
-                                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                                className="bg-transparent border-none cursor-pointer p-2 rounded-full flex items-center justify-center text-foreground transition-colors duration-200 hover:bg-muted/10"
                                 title="Copy entire text"
                             >
-                                <i className="ri-file-copy-line" style={{ fontSize: '1rem' }}></i>
+                                <RiFileCopyLine size={16} />
                             </button>
                         </div>
                     }
                 />
                 <div
                     ref={contentRef}
-                    style={{
-                        flex: '1 1 auto',
-                        maxWidth: '800px',
-                        minWidth: '320px',
-                        width: '100%',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        // Ensure print styles look good (text color on white background usually)
-                        // But inheriting current theme is also fine for dark mode users who want dark pdfs?
-                        // Usually PDFs are preferred light.
-                        // For now, let's keep it WYSIWYG.
-                    }}
+                    className="flex-auto max-w-[800px] min-w-[320px] w-full flex flex-col"
                 >
                     <DocumentEditor
                         documentId={editingDoc.id}
@@ -169,15 +124,7 @@ export default function DocumentEditorView({
                 </div>
 
                 {docHighlights.length > 0 && (
-                    <div style={{
-                        flex: '0 1 280px',
-                        minWidth: '220px',
-                        position: 'sticky',
-                        top: '80px',
-                        maxHeight: 'calc(100vh - 100px)',
-                        overflowY: 'auto',
-                        scrollbarWidth: 'none',
-                    }}>
+                    <div className="flex-[0_1_280px] min-w-[220px] sticky top-20 max-h-[calc(100vh-100px)] overflow-y-auto no-scrollbar">
                         <SourcesSidebar highlights={docHighlights.map(h => ({
                             ...h,
                             title: h.title || null,
@@ -190,9 +137,9 @@ export default function DocumentEditorView({
         );
     }
 
-    // Fallback for loading state (usually handled by parent, but safe to keep)
+    // Fallback for loading state
     return (
-        <div style={{ padding: '2rem', textAlign: 'center' }}>
+        <div className="p-8 text-center text-muted">
             Loading document...
         </div>
     );

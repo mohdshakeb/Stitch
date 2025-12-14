@@ -1,4 +1,12 @@
-'use client';
+import {
+    RiArrowLeftLine,
+    RiArrowDownSLine,
+    RiFolder2Line,
+    RiCheckLine,
+    RiAddLine,
+    RiSunLine,
+    RiMoonLine
+} from '@remixicon/react';
 
 import { useTheme } from 'next-themes';
 import { useEffect, useState, useRef } from 'react';
@@ -56,126 +64,52 @@ export default function Header({ variant = 'default', actions }: HeaderProps) {
     if (!mounted) return null;
 
     return (
-        <header style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            height: '60px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            padding: '0 24px',
-            zIndex: 50,
-            background: 'transparent',
-            pointerEvents: 'none', // Allow clicking through the header area
-        }}>
-            {/* Logo or Back Button */}
-            <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                pointerEvents: 'auto',
-            }}>
+        <header className="fixed top-0 left-0 right-0 h-[60px] flex items-center justify-between px-6 z-50 bg-transparent pointer-events-none">
+            <div className="flex items-center pointer-events-auto">
                 {variant === 'back' ? (
                     <button
                         onClick={() => {
                             router.push('/');
                         }}
-                        style={{
-                            background: 'none',
-                            border: 'none',
-                            cursor: 'pointer',
-                            padding: '8px',
-                            borderRadius: '50%',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            color: 'hsl(var(--foreground))',
-                            transition: 'background-color 0.2s ease',
-                        }}
-                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'hsl(var(--muted) / 0.1)'}
-                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                        className="bg-transparent border-none cursor-pointer p-2 rounded-full flex items-center justify-center text-foreground transition-colors duration-200 hover:bg-muted/10"
                         title="Back to Home"
                     >
-                        <i className="ri-arrow-left-line" style={{ fontSize: '1.5rem' }}></i>
+                        <RiArrowLeftLine size={24} />
                     </button>
                 ) : (
                     <Image
-                        src={theme === 'dark' ? "/header-logo-dark.png" : "/header-logo.png"}
+                        src={theme === 'dark' ? "/logo-dark.png" : "/logo.png"}
                         alt="App Logo"
                         width={120}
                         height={40}
-                        style={{ objectFit: 'contain', objectPosition: 'left' }}
+                        className="object-contain object-left"
                         priority
                     />
                 )}
             </div>
 
             {/* Theme Toggle & Settings */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', pointerEvents: 'auto' }}>
+            <div className="flex items-center gap-2 pointer-events-auto">
                 {variant === 'default' && isConnected && (
-                    <div className="workspace-selector" style={{ position: 'relative' }}>
+                    <div className="workspace-selector relative">
                         <button
                             onClick={(e) => {
                                 e.stopPropagation();
                                 setShowWorkspaces(!showWorkspaces);
                             }}
-                            style={{
-                                background: 'transparent',
-                                border: '1px solid transparent',
-                                cursor: 'pointer',
-                                padding: '6px 12px',
-                                borderRadius: '6px',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '8px',
-                                color: 'hsl(var(--foreground))',
-                                transition: 'all 0.2s ease',
-                                fontSize: '0.875rem',
-                                fontWeight: 500,
-                            }}
-                            onMouseEnter={(e) => {
-                                e.currentTarget.style.backgroundColor = 'hsl(var(--muted) / 0.1)';
-                                e.currentTarget.style.borderColor = 'hsl(var(--border) / 0.5)';
-                            }}
-                            onMouseLeave={(e) => {
-                                e.currentTarget.style.backgroundColor = 'transparent';
-                                e.currentTarget.style.borderColor = 'transparent';
-                            }}
+                            className="bg-transparent border border-transparent cursor-pointer py-1.5 px-3 rounded-md flex items-center gap-2 text-foreground transition-all duration-200 text-sm font-medium hover:bg-muted/10 hover:border-border/50"
                         >
-                            <span style={{ maxWidth: '150px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            <span className="max-w-[150px] truncate">
                                 {workspaces.find(w => w.id === activeWorkspaceId)?.name || 'Select Workspace'}
                             </span>
-                            <i className={`ri-arrow-down-s-line ${showWorkspaces ? 'rotate' : ''}`} style={{
-                                transition: 'transform 0.2s ease',
-                                transform: showWorkspaces ? 'rotate(180deg)' : 'rotate(0deg)'
-                            }}></i>
+                            <RiArrowDownSLine
+                                className={`transition-transform duration-200 ${showWorkspaces ? 'rotate-180' : 'rotate-0'}`}
+                            />
                         </button>
 
                         {showWorkspaces && (
-                            <div style={{
-                                position: 'absolute',
-                                top: '100%',
-                                right: 0,
-                                marginTop: '8px',
-                                backgroundColor: 'hsl(var(--background))',
-                                border: '1px solid hsl(var(--border))',
-                                borderRadius: '8px',
-                                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
-                                width: '240px',
-                                display: 'flex',
-                                flexDirection: 'column',
-                                padding: '4px',
-                                zIndex: 60,
-                            }}>
-                                <div style={{
-                                    padding: '8px 12px',
-                                    fontSize: '0.75rem',
-                                    color: 'hsl(var(--muted))',
-                                    fontWeight: 600,
-                                    textTransform: 'uppercase',
-                                    letterSpacing: '0.05em'
-                                }}>
+                            <div className="absolute top-full right-0 mt-2 bg-background border border-border rounded-lg shadow-lg w-[240px] flex flex-col p-1 z-[60]">
+                                <div className="px-3 py-2 text-xs text-muted font-semibold uppercase tracking-wider">
                                     Your Workspaces
                                 </div>
                                 {workspaces.map((ws) => (
@@ -185,55 +119,24 @@ export default function Header({ variant = 'default', actions }: HeaderProps) {
                                             handleSwitchWorkspace(ws.id);
                                             setShowWorkspaces(false);
                                         }}
-                                        style={{
-                                            textAlign: 'left',
-                                            padding: '8px 12px',
-                                            fontSize: '0.875rem',
-                                            color: 'hsl(var(--foreground))',
-                                            background: 'none',
-                                            border: 'none',
-                                            cursor: 'pointer',
-                                            borderRadius: '4px',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            gap: '8px',
-                                            width: '100%',
-                                            opacity: ws.id === activeWorkspaceId ? 1 : 0.7,
-                                        }}
-                                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'hsl(var(--muted) / 0.1)'}
-                                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                                        className={`text-left px-3 py-2 text-sm text-foreground bg-transparent border-none cursor-pointer rounded flex items-center gap-2 w-full hover:bg-muted/10 ${ws.id === activeWorkspaceId ? 'opacity-100' : 'opacity-70'}`}
                                     >
-                                        <i className="ri-folder-2-line" style={{ opacity: 0.7 }}></i>
-                                        <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{ws.name}</span>
-                                        {ws.id === activeWorkspaceId && <i className="ri-check-line" style={{ color: 'hsl(var(--primary))' }}></i>}
+                                        <RiFolder2Line size={16} className="opacity-70" />
+                                        <span className="flex-1 overflow-hidden text-ellipsis whitespace-nowrap">{ws.name}</span>
+                                        {ws.id === activeWorkspaceId && <RiCheckLine size={16} className="text-primary" />}
                                     </button>
                                 ))}
 
-                                <div style={{ height: '1px', backgroundColor: 'hsl(var(--border))', margin: '4px 0' }} />
+                                <div className="h-px bg-border my-1" />
 
                                 <button
                                     onClick={() => {
                                         createWorkspace();
                                         setShowWorkspaces(false);
                                     }}
-                                    style={{
-                                        textAlign: 'left',
-                                        padding: '8px 12px',
-                                        fontSize: '0.875rem',
-                                        color: 'hsl(var(--primary))',
-                                        background: 'none',
-                                        border: 'none',
-                                        cursor: 'pointer',
-                                        borderRadius: '4px',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: '8px',
-                                        width: '100%',
-                                    }}
-                                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'hsl(var(--muted) / 0.1)'}
-                                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                                    className="text-left px-3 py-2 text-sm text-primary bg-transparent border-none cursor-pointer rounded flex items-center gap-2 w-full hover:bg-muted/10"
                                 >
-                                    <i className="ri-add-line"></i>
+                                    <RiAddLine size={16} />
                                     Create New Workspace
                                 </button>
                             </div>
@@ -243,27 +146,13 @@ export default function Header({ variant = 'default', actions }: HeaderProps) {
                 {actions}
                 <button
                     onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-                    style={{
-                        background: 'none',
-                        border: 'none',
-                        cursor: 'pointer',
-                        padding: '8px',
-                        borderRadius: '50%',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        color: 'hsl(var(--foreground))',
-                        transition: 'background-color 0.2s ease',
-                        pointerEvents: 'auto', // Re-enable pointer events for button
-                    }}
-                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'hsl(var(--muted) / 0.1)'}
-                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                    className="bg-transparent border-none cursor-pointer p-2 rounded-full flex items-center justify-center text-foreground transition-colors duration-200 pointer-events-auto hover:bg-muted/10"
                     title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
                 >
                     {theme === 'dark' ? (
-                        <i className="ri-sun-line" style={{ fontSize: '1rem' }}></i>
+                        <RiSunLine size={16} />
                     ) : (
-                        <i className="ri-moon-line" style={{ fontSize: '1rem' }}></i>
+                        <RiMoonLine size={16} />
                     )}
                 </button>
             </div>

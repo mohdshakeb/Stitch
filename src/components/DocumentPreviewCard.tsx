@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
+import { RiDeleteBinLine } from '@remixicon/react';
 
 interface Highlight {
     id: string;
@@ -67,60 +68,34 @@ export default function DocumentPreviewCard({
 
     const renderContent = () => {
         if (!doc.content) {
-            return <div style={{ fontStyle: 'italic', opacity: 0.5 }}>Drop highlights here or start writing...</div>;
+            return <div className="italic opacity-50">Drop highlights here or start writing...</div>;
         }
 
         const isLongContent = doc.content.length > 1200; // Increased threshold to prevent duplication on medium files
 
         if (isLongContent) {
             return (
-                <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+                <div className="flex flex-col h-full">
                     {/* Top Half */}
                     <div
                         dangerouslySetInnerHTML={{ __html: doc.content }}
-                        className="document-preview-content"
-                        style={{
-                            height: '50%',
-                            overflow: 'hidden',
-                            // No fade mask as requested
-                        }}
+                        className="document-preview-content h-1/2 overflow-hidden [&_p]:mb-3 [&_p]:leading-relaxed"
                     />
 
                     {/* Separator */}
-                    <div style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: '8px',
-                        padding: '12px 0',
-                        color: 'hsl(var(--muted))',
-                        opacity: 0.5
-                    }}>
-                        <div style={{ height: '1px', flex: 1, backgroundColor: 'hsl(var(--border))' }}></div>
-                        <span style={{ fontSize: '0.8rem', letterSpacing: '2px' }}>•••</span>
-                        <div style={{ height: '1px', flex: 1, backgroundColor: 'hsl(var(--border))' }}></div>
+                    <div className="flex items-center justify-center gap-2 py-3 text-muted opacity-50">
+                        <div className="h-px flex-1 bg-border"></div>
+                        <span className="text-xs tracking-[2px]">•••</span>
+                        <div className="h-px flex-1 bg-border"></div>
                     </div>
 
                     {/* Bottom Half */}
-                    <div style={{
-                        height: '50%',
-                        overflow: 'hidden',
-                        display: 'flex',
-                        alignItems: 'flex-end',
-                    }}>
+                    <div className="h-1/2 overflow-hidden flex items-end">
                         <div
                             dangerouslySetInnerHTML={{ __html: doc.content }}
-                            className="document-preview-content"
-                            style={{ width: '100%' }}
+                            className="document-preview-content w-full [&_p]:mb-3 [&_p]:leading-relaxed"
                         />
                     </div>
-
-                    <style jsx>{`
-                        .document-preview-content :global(p) {
-                            margin-bottom: 0.75rem;
-                            line-height: 1.5;
-                        }
-                    `}</style>
                 </div>
             );
         }
@@ -129,22 +104,8 @@ export default function DocumentPreviewCard({
             <>
                 <div
                     dangerouslySetInnerHTML={{ __html: doc.content }}
-                    className="document-preview-content"
-                    style={{
-                        display: '-webkit-box',
-                        WebkitLineClamp: 12,
-                        WebkitBoxOrient: 'vertical',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        wordBreak: 'break-word',
-                    }}
+                    className="document-preview-content line-clamp-[12] overflow-hidden text-ellipsis break-words [&_p]:mb-3 [&_p]:leading-relaxed"
                 />
-                <style jsx>{`
-                    .document-preview-content :global(p) {
-                        margin-bottom: 0.75rem;
-                        line-height: 1.5;
-                    }
-                `}</style>
             </>
         );
     };
@@ -152,22 +113,10 @@ export default function DocumentPreviewCard({
     return (
         <div
             data-id={doc.id}
-            className="document-wrapper"
             onDragOver={(e) => onDragOver(e, doc.id)}
             onDragLeave={onDragLeave}
             onDrop={(e) => onDrop(e, doc.id)}
-            style={{
-                scrollSnapAlign: 'center',
-                width: '100%',
-                maxWidth: '650px',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                gap: 'var(--space-4)',
-                opacity: 1, // Always fully visible
-                transition: 'opacity 0.3s ease',
-                padding: '0 20px', // Add side padding to ensure it doesn't touch edges
-            }}
+            className="document-wrapper group/wrapper w-full max-w-[650px] flex flex-col items-center gap-4 px-5 opacity-100 transition-opacity duration-300 snap-center"
         >
             <div
                 onClick={(e) => {
@@ -189,37 +138,14 @@ export default function DocumentPreviewCard({
                         router.push(`/?doc=${doc.id}`);
                     }
                 }}
-                style={{
-                    width: '450px', // Fixed size to match placeholder
-                    maxWidth: '100%',
-                    aspectRatio: '1 / 1.414',
-                    backgroundColor: 'hsl(var(--surface))',
-                    boxShadow: isDragOver
-                        ? '0 0 0 4px hsl(var(--primary) / 0.2), var(--shadow-xl)'
-                        : isActive ? 'var(--shadow-xl)' : 'none',
-                    borderRadius: 'var(--radius-sm)',
-                    padding: '40px',
-                    cursor: 'pointer',
-                    transition: 'all 0.3s ease',
-                    overflow: 'hidden',
-                    position: 'relative',
-                    transform: isActive ? 'scale(1)' : 'scale(0.95)', // Slightly smaller inactive state
-                    border: isDragOver ? '2px solid hsl(var(--primary))' : 'none',
-                    display: 'flex',
-                    flexDirection: 'column',
-                }}
-                className="document-paper group"
+                className={`document-paper group relative flex flex-col w-[450px] max-w-full aspect-[1/1.414] bg-surface rounded-sm p-10 cursor-pointer transition-all duration-300 overflow-hidden hover:-translate-y-0.5 ${isActive ? 'scale-100 shadow-[0_20px_25px_-5px_rgba(0,0,0,0.05),0_8px_10px_-6px_rgba(0,0,0,0.01)]' : 'scale-95'} ${isDragOver ? 'border-2 border-primary shadow-[0_0_0_4px_hsl(var(--primary)/0.2),_var(--shadow-xl)]' : 'border-none'}`}
             >
                 {/* Title Row */}
-                <div style={{
-                    display: 'flex',
-                    alignItems: 'flex-start',
-                    justifyContent: 'space-between',
-                    marginBottom: 'var(--space-4)',
-                    gap: '12px',
-                    flexShrink: 0,
-                }} onClick={(e) => e.stopPropagation()}>
-                    <div style={{ position: 'relative', flex: 1 }}>
+                <div
+                    className="flex items-start justify-between mb-4 gap-3 shrink-0"
+                    onClick={(e) => e.stopPropagation()}
+                >
+                    <div className="relative flex-1">
                         <input
                             ref={inputRef}
                             type="text"
@@ -227,87 +153,29 @@ export default function DocumentPreviewCard({
                             onChange={(e) => setTitle(e.target.value)}
                             onBlur={handleTitleBlur}
                             onKeyDown={handleKeyDown}
-                            style={{
-                                fontSize: '1.5rem',
-                                fontFamily: 'var(--font-heading)',
-                                fontWeight: 600,
-                                color: 'hsl(var(--foreground))',
-                                border: 'none',
-                                background: 'transparent',
-                                width: '100%',
-                                outline: 'none',
-                                cursor: 'text',
-                                paddingRight: '24px',
-                            }}
+                            className="text-2xl font-heading font-semibold text-foreground border-none bg-transparent w-full outline-none cursor-text pr-6 placeholder:text-muted/50"
                             placeholder="Untitled Document"
                         />
                     </div>
 
                     <button
                         onClick={(e) => onDelete(doc.id, e)}
-                        className="delete-btn"
-                        style={{
-                            background: 'none',
-                            border: 'none',
-                            color: 'hsl(var(--muted))',
-                            cursor: 'pointer',
-                            padding: '4px',
-                            borderRadius: '4px',
-                            transition: 'all 0.2s ease',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                        }}
+                        className="delete-btn bg-transparent border-none text-muted cursor-pointer p-1 rounded transition-all duration-200 flex items-center justify-center opacity-0 group-hover/wrapper:opacity-100 hover:text-red-500 hover:bg-muted/10"
                         title="Delete Document"
                     >
-                        <i className="ri-delete-bin-line" style={{ fontSize: '1.2rem' }}></i>
+                        <RiDeleteBinLine size={20} />
                     </button>
                 </div>
 
-                <div style={{
-                    fontSize: '0.875rem',
-                    color: 'hsl(var(--muted))',
-                    lineHeight: '1.6',
-                    whiteSpace: 'pre-wrap',
-                    overflow: 'hidden',
-                    flex: 1, // Take remaining space
-                    maskImage: 'linear-gradient(to bottom, black 90%, transparent 100%)', // Fade out bottom slightly
-                }}>
+                <div className="text-sm text-muted leading-relaxed whitespace-pre-wrap overflow-hidden flex-1 [mask-image:linear-gradient(to_bottom,black_90%,transparent_100%)]">
                     {renderContent()}
                 </div>
 
-                <div style={{
-                    fontSize: '0.75rem',
-                    color: 'hsl(var(--muted))',
-                    marginTop: 'auto',
-                    paddingTop: '16px',
-                    flexShrink: 0,
-                }}>
+                <div className="text-xs text-muted mt-auto pt-4 shrink-0">
                     {highlights.length} Highlight{highlights.length !== 1 ? 's' : ''}
                 </div>
             </div>
 
-            <style jsx>{`
-        :global(.document-paper:hover) {
-          transform: translateY(-2px);
-        }
-        /* Input placeholder style */
-        input::placeholder {
-          color: hsl(var(--muted) / 0.5);
-        }
-        
-        /* Delete button hover effect */
-        .delete-btn {
-            opacity: 0;
-        }
-        .document-wrapper:hover .delete-btn {
-            opacity: 1;
-        }
-        .delete-btn:hover {
-            color: #ef4444 !important;
-            background-color: hsl(var(--muted) / 0.1) !important;
-        }
-      `}</style>
         </div >
     );
 }

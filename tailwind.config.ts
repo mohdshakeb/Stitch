@@ -9,8 +9,16 @@ const config: Config = {
     theme: {
         extend: {
             colors: {
-                background: "var(--background)",
-                foreground: "var(--foreground)",
+                background: "hsl(var(--background) / <alpha-value>)",
+                foreground: "hsl(var(--foreground) / <alpha-value>)",
+                surface: "hsl(var(--surface) / <alpha-value>)",
+                muted: "hsl(var(--muted) / <alpha-value>)",
+                border: "hsl(var(--border) / <alpha-value>)",
+                primary: {
+                    DEFAULT: "hsl(var(--primary) / <alpha-value>)",
+                    foreground: "hsl(var(--primary-foreground) / <alpha-value>)",
+                },
+                accent: "hsl(var(--accent) / <alpha-value>)",
             },
         },
     },

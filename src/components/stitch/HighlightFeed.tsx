@@ -42,30 +42,16 @@ export default function HighlightFeed({
     const assignedHighlights = filteredHighlights.filter(h => getDocIds(h).length > 0);
 
     return (
-        <div style={{
-            width: '240px',
-            paddingTop: 'calc(50vh - 320px)',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 'var(--space-4)',
-            height: '100vh',
-            overflowY: 'auto',
-            scrollbarWidth: 'none',
-            paddingBottom: 'var(--space-8)',
-        }}>
+        <div className="w-[240px] pt-[calc(50vh-320px)] flex flex-col gap-4 h-screen overflow-y-auto no-scrollbar pb-8">
             <div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)', padding: '10px' }}>
+                <div className="flex flex-col gap-3 p-2.5">
                     {/* Unassigned Highlights */}
                     {unassignedHighlights.map((highlight) => (
                         <div
                             key={highlight.id}
                             draggable
                             onDragStart={(e) => handleDragStart(e, highlight.id)}
-                            style={{
-                                transform: 'scale(0.95)',
-                                transformOrigin: 'center',
-                                cursor: 'grab',
-                            }}
+                            className="scale-95 origin-center cursor-grab"
                         >
                             <HighlightCard
                                 id={highlight.id}
@@ -88,16 +74,8 @@ export default function HighlightFeed({
 
                     {/* Assigned Highlights Section */}
                     {assignedHighlights.length > 0 && (
-                        <div style={{ marginTop: 'var(--space-8)', display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
-                            <div style={{
-                                fontSize: '0.75rem',
-                                fontWeight: 600,
-                                color: 'hsl(var(--muted))',
-                                marginBottom: 'var(--space-1)',
-                                paddingLeft: '4px',
-                                textTransform: 'uppercase',
-                                letterSpacing: '0.05em',
-                            }}>
+                        <div className="mt-8 flex flex-col gap-3">
+                            <div className="text-xs font-semibold text-muted mb-1 pl-1 uppercase tracking-wider">
                                 Added to Documents
                             </div>
 
@@ -106,12 +84,7 @@ export default function HighlightFeed({
                                     key={highlight.id}
                                     draggable
                                     onDragStart={(e) => handleDragStart(e, highlight.id)}
-                                    style={{
-                                        transform: 'scale(0.95)',
-                                        transformOrigin: 'center',
-                                        cursor: 'grab',
-                                        opacity: 0.8, // Slightly faded
-                                    }}
+                                    className="scale-95 origin-center cursor-grab opacity-80"
                                 >
                                     <HighlightCard
                                         id={highlight.id}
@@ -136,22 +109,7 @@ export default function HighlightFeed({
 
                     {/* Empty State - Only if NO highlights exist */}
                     {highlights.length === 0 && (
-                        <div style={{
-                            aspectRatio: '1/1',
-                            borderRadius: '2px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            padding: '20px',
-                            textAlign: 'center',
-                            color: 'rgba(0, 0, 0, 0.4)', // Visible but muted text
-                            fontSize: '0.875rem',
-                            backgroundColor: 'rgba(254, 243, 199, 0.5)', // Low opacity amber
-                            boxShadow: 'none',
-                            cursor: 'default',
-                            userSelect: 'none',
-                            border: '1px solid rgba(0,0,0,0.05)',
-                        }}>
+                        <div className="aspect-square rounded-[2px] flex items-center justify-center p-5 text-center text-black/40 text-sm bg-amber-100/50 cursor-default select-none border border-black/5">
                             Highlight text on the web to add notes here.
                         </div>
                     )}
