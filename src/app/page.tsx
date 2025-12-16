@@ -15,6 +15,23 @@ import DocumentFeed from '@/components/stitch/DocumentFeed';
 import RightSidebar from '@/components/stitch/RightSidebar';
 import DocumentEditorView from '@/components/stitch/DocumentEditorView';
 import StitchLayout from '@/components/stitch/StitchLayout';
+import HighlightCard from '@/components/HighlightCard';
+
+// Dnd Kit Imports
+import {
+  DndContext,
+  DragOverlay,
+  useSensor,
+  useSensors,
+  PointerSensor,
+  DragStartEvent,
+  DragEndEvent,
+} from '@dnd-kit/core';
+
+const defaultDropAnimation = {
+  duration: 300,
+  easing: 'cubic-bezier(0.18, 0.67, 0.6, 1.22)',
+};
 
 function HomeContent() {
   const { showToast } = useToast();
@@ -38,10 +55,23 @@ function HomeContent() {
 
   const [newlyCreatedDocId, setNewlyCreatedDocId] = useState<string | null>(null);
   const [activeDocId, setActiveDocId] = useState<string | null>(null);
-  const [dragOverDocId, setDragOverDocId] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   const [isInstallModalOpen, setIsInstallModalOpen] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+  // --- Drag and Drop State ---
+  const [activeDragItem, setActiveDragItem] = useState<HighlightType | null>(null);
+  const [processingDropId, setProcessingDropId] = useState<string | null>(null);
+  // Conditional drop animation (null = instant vanish, object = fly back)
+  const [dropAnimation, setDropAnimation] = useState<typeof defaultDropAnimation | null>(defaultDropAnimation);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    })
+  );
 
   // Set up intersection observer to track active document
   useEffect(() => {
@@ -139,93 +169,112 @@ function HomeContent() {
     return [];
   };
 
-  const handleDragStart = (e: React.DragEvent, highlightId: string) => {
-    e.dataTransfer.setData('text/plain', highlightId);
-    e.dataTransfer.effectAllowed = 'copyMove'; // Enable copy behavior for multi-assign
+
+  // --- Dnd Kit Handlers ---
+
+  const handleDragStart = (event: DragStartEvent) => {
+    const { active } = event;
+    const item = highlights.find(h => h.id === active.id);
+    if (item) {
+      setActiveDragItem(item);
+    }
   };
 
-  const handleDragOverDoc = (e: React.DragEvent, docId: string) => {
-    e.preventDefault(); // Allow dropping
-    setDragOverDocId(docId);
-  };
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
 
-  const handleDragLeaveDoc = (e: React.DragEvent) => {
-    setDragOverDocId(null);
-  };
+    // Determine animation BEFORE closing the overlay
+    if (over) {
+      // Valid drop: Vanish instantly (no fly back)
+      setDropAnimation(null);
+    } else {
+      // Invalid drop: Fly back to original position
+      setDropAnimation(defaultDropAnimation);
+    }
 
-  const handleDropOnDoc = async (e: React.DragEvent, docId: string) => {
-    e.preventDefault();
-    setDragOverDocId(null);
-    const highlightId = e.dataTransfer.getData('text/plain');
+    // Delay clearing active item to ensure dropAnimation prop updates first
+    setTimeout(() => {
+      setActiveDragItem(null);
+    }, 0);
 
-    if (highlightId) {
-      try {
-        const highlight = highlights.find(h => h.id === highlightId);
-        if (highlight) {
-          const currentIds = getDocIds(highlight);
+    if (!over) return;
 
-          if (currentIds.includes(docId)) {
-            showToast('Already added', {
-              type: 'info',
-              description: 'This highlight is already part of this document.'
-            });
-            return;
-          }
+    // Dropped on a document
+    const docId = over.id as string;
+    const highlightId = active.id as string;
 
-          // Append new Doc ID
-          const newIds = [...currentIds, docId];
-          const updatedHighlight = {
-            ...highlight,
-            documentIds: newIds,
-            documentId: docId // Update legacy field to point to most recent
-          };
+    const highlight = highlights.find(h => h.id === highlightId);
+    if (!highlight) return;
 
-          await addHighlight(updatedHighlight); // Links metadata (Sidebar)
+    try {
+      const currentIds = getDocIds(highlight);
 
-          // Also append text to document body (Editable Content)
-          const targetDoc = documents.find(d => d.id === docId);
-
-          if (!targetDoc) {
-            console.error('Target document not found');
-            return;
-          }
-          const color = highlight.color || getCategoryStyles(highlight.url).color;
-          // Calculate duration based on text length (0.02s per char), min 0.8s, max 3s
-          const duration = Math.min(3, Math.max(0.8, highlight.text.length * 0.02));
-
-          const newContent = targetDoc.content
-            ? `${targetDoc.content}<p><span data-highlight-id="${highlight.id}" class="highlight-marker highlight-animate" style="--highlight-color: ${color}; --highlight-duration: ${duration}s">${highlight.text}</span></p>`
-            : `<p><span data-highlight-id="${highlight.id}" class="highlight-marker highlight-animate" style="--highlight-color: ${color}; --highlight-duration: ${duration}s">${highlight.text}</span></p>`;
-
-          await addDocument({
-            ...targetDoc,
-            content: newContent,
-            updatedAt: new Date().toISOString()
-          });
-
-          showToast('Added to document', {
-            type: 'success',
-            description: 'The highlight text has been appended to the document.'
-          });
-
-          // Cleanup animation class after it plays to prevent re-triggering
-          setTimeout(async () => {
-            // Remove the animation class but keep the marker class and inline style
-            // This is a "blind" update assuming no other concurrent edits occurred in the last few seconds.
-            // For a local-first single-user app, this is an acceptable trade-off for the visual effect.
-            const cleanContent = newContent.replace(/ highlight-animate/g, '');
-
-            await addDocument({
-              ...targetDoc,
-              content: cleanContent, // Using the variable from closure is safe here as it hasn't changed locally
-              updatedAt: new Date().toISOString()
-            });
-          }, duration * 1000 + 500); // Wait for animation + buffer
-
-        }
-      } catch (error) {
-        console.error('Error moving highlight:', error);
+      if (currentIds.includes(docId)) {
+        showToast('Already added', {
+          type: 'info',
+          description: 'This highlight is already part of this document.'
+        });
+        return;
       }
+
+      // Optimistic UI: Hide the item immediately to prevent "flash back"
+      setProcessingDropId(highlightId);
+
+      // Append new Doc ID
+      const newIds = [...currentIds, docId];
+      const updatedHighlight = {
+        ...highlight,
+        documentIds: newIds,
+        documentId: docId // Update legacy field to point to most recent
+      };
+
+      await addHighlight(updatedHighlight); // Links metadata (Sidebar)
+
+      // Also append text to document body (Editable Content)
+      const targetDoc = documents.find(d => d.id === docId);
+
+      if (!targetDoc) {
+        console.error('Target document not found');
+        return;
+      }
+      const color = highlight.color || getCategoryStyles(highlight.url).color;
+      // Calculate duration based on text length (0.02s per char), min 0.8s, max 3s
+      const duration = Math.min(3, Math.max(0.8, highlight.text.length * 0.02));
+
+      const newContent = targetDoc.content
+        ? `${targetDoc.content}<p><span data-highlight-id="${highlight.id}" class="highlight-marker highlight-animate" style="--highlight-color: ${color}; --highlight-duration: ${duration}s">${highlight.text}</span></p>`
+        : `<p><span data-highlight-id="${highlight.id}" class="highlight-marker highlight-animate" style="--highlight-color: ${color}; --highlight-duration: ${duration}s">${highlight.text}</span></p>`;
+
+      await addDocument({
+        ...targetDoc,
+        content: newContent,
+        updatedAt: new Date().toISOString()
+      });
+
+      showToast('Added to document', {
+        type: 'success',
+        description: 'The highlight text has been appended to the document.'
+      });
+
+      // Clear optimistic state after data update + buffer
+      // We wait a bit to ensure the highlight has moved to "Assigned" list in the data prop
+      setTimeout(() => {
+        setProcessingDropId(null);
+      }, 500);
+
+      // Cleanup animation class after it plays to prevent re-triggering
+      setTimeout(async () => {
+        const cleanContent = newContent.replace(/ highlight-animate/g, '');
+        await addDocument({
+          ...targetDoc,
+          content: cleanContent,
+          updatedAt: new Date().toISOString()
+        });
+      }, duration * 1000 + 500);
+
+    } catch (error) {
+      console.error('Error moving highlight:', error);
+      setProcessingDropId(null); // Reset on error
     }
   };
 
@@ -313,49 +362,66 @@ function HomeContent() {
   }
 
   return (
-    <StitchLayout>
-      {/* 1. Left Column: Highlight Stream */}
-      <HighlightFeed
-        highlights={highlights}
-        documents={documents}
-        activeDocId={activeDocId}
-        selectedCategory={selectedCategory}
-        handleDeleteHighlight={handleDeleteHighlight}
-        handleMoveHighlight={handleMoveHighlight}
-        handleDragStart={handleDragStart}
-      />
+    <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
+      <StitchLayout>
+        {/* 1. Left Column: Highlight Stream */}
+        <HighlightFeed
+          highlights={highlights}
+          documents={documents}
+          activeDocId={activeDocId}
+          selectedCategory={selectedCategory}
+          filteredIds={processingDropId ? [processingDropId] : []}
+          handleDeleteHighlight={handleDeleteHighlight}
+          handleMoveHighlight={handleMoveHighlight}
+        />
 
-      {/* 2. Center Column: Document Feed */}
-      <DocumentFeed
-        ref={scrollContainerRef}
-        documents={documents}
-        highlights={highlights}
-        activeDocId={activeDocId}
-        dragOverDocId={dragOverDocId}
-        newlyCreatedDocId={newlyCreatedDocId}
-        handleDragOverDoc={handleDragOverDoc}
-        handleDragLeaveDoc={handleDragLeaveDoc}
-        handleDropOnDoc={handleDropOnDoc}
-        handleDeleteDocument={handleDeleteDocument}
-        handleTitleUpdate={handleTitleUpdate}
-        handleCreateDocument={handleCreateDocument}
-      />
+        {/* 2. Center Column: Document Feed */}
+        <DocumentFeed
+          ref={scrollContainerRef}
+          documents={documents}
+          highlights={highlights}
+          activeDocId={activeDocId}
+          newlyCreatedDocId={newlyCreatedDocId}
+          handleDeleteDocument={handleDeleteDocument}
+          handleTitleUpdate={handleTitleUpdate}
+          handleCreateDocument={handleCreateDocument}
+        />
 
-      {/* 3. Right Column: Sidebar & Navigation */}
-      <RightSidebar
-        documents={documents}
-        highlights={highlights}
-        activeDocId={activeDocId}
-        scrollToDocument={scrollToDocument}
-        isExtensionAvailable={isExtensionAvailable}
-        setIsInstallModalOpen={setIsInstallModalOpen}
-        selectedCategory={selectedCategory}
-        setSelectedCategory={setSelectedCategory}
-        handleCreateDocument={handleCreateDocument}
-      />
+        {/* 3. Right Column: Sidebar & Navigation */}
+        <RightSidebar
+          documents={documents}
+          highlights={highlights}
+          activeDocId={activeDocId}
+          scrollToDocument={scrollToDocument}
+          isExtensionAvailable={isExtensionAvailable}
+          setIsInstallModalOpen={setIsInstallModalOpen}
+          selectedCategory={selectedCategory}
+          setSelectedCategory={setSelectedCategory}
+          handleCreateDocument={handleCreateDocument}
+        />
 
-      <InstallExtensionModal isOpen={isInstallModalOpen} onClose={() => setIsInstallModalOpen(false)} />
-    </StitchLayout>
+        <InstallExtensionModal isOpen={isInstallModalOpen} onClose={() => setIsInstallModalOpen(false)} />
+
+        <DragOverlay dropAnimation={dropAnimation}>
+          {activeDragItem ? (
+            <div className="w-[180px] rotate-2 scale-105 shadow-2xl cursor-grabbing">
+              <HighlightCard
+                // @ts-ignore
+                id={activeDragItem.id}
+                text={activeDragItem.text}
+                url={activeDragItem.url}
+                title={activeDragItem.title}
+                favicon={activeDragItem.favicon}
+                createdAt={activeDragItem.createdAt}
+                color={activeDragItem.color}
+                // Props not needed for drag preview
+                documents={[]}
+              />
+            </div>
+          ) : null}
+        </DragOverlay>
+      </StitchLayout>
+    </DndContext>
   );
 }
 

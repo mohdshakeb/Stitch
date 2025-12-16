@@ -6,11 +6,7 @@ interface DocumentFeedProps {
     documents: DocumentType[];
     highlights: HighlightType[];
     activeDocId: string | null;
-    dragOverDocId: string | null;
     newlyCreatedDocId: string | null;
-    handleDragOverDoc: (e: React.DragEvent, docId: string) => void;
-    handleDragLeaveDoc: (e: React.DragEvent) => void;
-    handleDropOnDoc: (e: React.DragEvent, docId: string) => void;
     handleDeleteDocument: (id: string, e: React.MouseEvent) => void;
     handleTitleUpdate: (id: string, newTitle: string) => void;
     handleCreateDocument: () => void;
@@ -20,11 +16,7 @@ const DocumentFeed = forwardRef<HTMLDivElement, DocumentFeedProps>(({
     documents,
     highlights,
     activeDocId,
-    dragOverDocId,
     newlyCreatedDocId,
-    handleDragOverDoc,
-    handleDragLeaveDoc,
-    handleDropOnDoc,
     handleDeleteDocument,
     handleTitleUpdate,
     handleCreateDocument
@@ -49,10 +41,6 @@ const DocumentFeed = forwardRef<HTMLDivElement, DocumentFeedProps>(({
                     doc={doc}
                     highlights={highlights.filter(h => getDocIds(h).includes(doc.id))}
                     isActive={activeDocId === doc.id}
-                    isDragOver={dragOverDocId === doc.id}
-                    onDragOver={handleDragOverDoc}
-                    onDragLeave={handleDragLeaveDoc}
-                    onDrop={handleDropOnDoc}
                     onDelete={handleDeleteDocument}
                     onTitleUpdate={handleTitleUpdate}
                     autoFocus={doc.id === newlyCreatedDocId}

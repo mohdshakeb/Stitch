@@ -10,6 +10,8 @@
     "bundle:extension": "node scripts/bundle-extension.js"
   },
   "dependencies": {
+    "@dnd-kit/core": "^6.3.1",
+    "@dnd-kit/utilities": "^3.2.2",
     "@remixicon/react": "^4.7.0",
     "@tiptap/extension-bubble-menu": "^2.10.3",
     "@tiptap/extension-placeholder": "^2.10.3",

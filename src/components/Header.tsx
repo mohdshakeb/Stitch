@@ -82,7 +82,7 @@ export default function Header({ variant = 'default', actions }: HeaderProps) {
                         alt="App Logo"
                         width={120}
                         height={40}
-                        className="object-contain object-left"
+                        className="object-contain object-left h-10 w-auto"
                         priority
                     />
                 )}

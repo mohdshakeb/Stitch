@@ -41,6 +41,7 @@ export default function HighlightCard({
     const [showMoveMenu, setShowMoveMenu] = useState(false);
 
     const styles = getCategoryStyles(url);
+    const bg = color || styles.color;
 
     const date = new Date(createdAt).toLocaleDateString('en-US', {
         month: 'short',
@@ -135,17 +136,17 @@ export default function HighlightCard({
                         scale: 1,
                         x: 0,
                         y: 0,
-                        transition: { type: 'spring', stiffness: 500, damping: 30, delay: 0.05 } // Delay entry
+                        transition: { type: 'spring', stiffness: 320, damping: 30, delay: 0.05 } // Delay entry
                     }}
                     exit={{
                         ...initialProps,
-                        transition: { type: 'spring', stiffness: 500, damping: 30, delay: 0 } // No delay on exit
+                        transition: { type: 'spring', stiffness: 280, damping: 20, delay: 0 } // No delay on exit
                     }}
                     onClick={(e) => e.stopPropagation()}
                     onClick={(e) => e.stopPropagation()}
                     className="w-[90%] max-w-[500px] aspect-square rounded p-10 shadow-xl flex flex-col relative -rotate-1"
                     style={{
-                        backgroundColor: styles.color,
+                        backgroundColor: bg,
                         color: styles.textColor,
                     }}
                 >
@@ -189,12 +190,12 @@ export default function HighlightCard({
         );
     };
 
-    const bg = color || styles.color;
+
 
     return (
         <>
             <div
-                className={`relative border-none rounded-2xl shadow-md p-6 transition-all duration-200 aspect-square flex flex-col cursor-grab ${showActions ? 'z-20 shadow-xl scale-105 -rotate-1' : 'z-1 rotate-0'}`}
+                className={`relative border-none rounded-2xl shadow-sm p-6 transition-all duration-200 aspect-square flex flex-col cursor-grab ${showActions ? 'z-20 shadow-xl scale-105 -rotate-1' : 'z-1 rotate-0'}`}
                 onClick={handleCardClick}
                 onMouseEnter={() => setShowActions(true)}
                 onMouseLeave={() => setShowActions(false)}

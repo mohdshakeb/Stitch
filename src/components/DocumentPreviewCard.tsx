@@ -1,6 +1,7 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, memo } from 'react';
 import { useRouter } from 'next/navigation';
 import { RiDeleteBinLine } from '@remixicon/react';
+import { useDroppable } from '@dnd-kit/core';
 
 interface Highlight {
     id: string;
@@ -22,23 +23,59 @@ interface DocumentPreviewCardProps {
     doc: Document;
     highlights?: Highlight[];  // Highlights associated with this document
     isActive: boolean;
-    isDragOver: boolean;
-    onDragOver: (e: React.DragEvent, id: string) => void;
-    onDragLeave: (e: React.DragEvent) => void;
-    onDrop: (e: React.DragEvent, id: string) => void;
+    // Removed manual drag props as Dnd-Kit handles state
     onDelete: (id: string, e: React.MouseEvent) => void;
     onTitleUpdate: (id: string, newTitle: string) => void;
     autoFocus?: boolean;
 }
 
+// Memoized Content Component to prevent animation resets on parent re-renders
+const DocumentContentPreview = memo(({ html }: { html: string }) => {
+    if (!html) {
+        return <div className="italic opacity-50">Drop highlights here or start writing...</div>;
+    }
+
+    const isLongContent = html.length > 1200;
+
+    if (isLongContent) {
+        return (
+            <div className="flex flex-col h-full">
+                {/* Top Half */}
+                <div
+                    dangerouslySetInnerHTML={{ __html: html }}
+                    className="document-preview-content h-1/2 overflow-hidden [&_p]:mb-3 [&_p]:leading-relaxed"
+                />
+
+                {/* Separator */}
+                <div className="flex items-center justify-center gap-2 py-3 text-muted opacity-50">
+                    <div className="h-px flex-1 bg-border"></div>
+                    <span className="text-xs tracking-[2px]">•••</span>
+                    <div className="h-px flex-1 bg-border"></div>
+                </div>
+
+                {/* Bottom Half */}
+                <div className="h-1/2 overflow-hidden flex items-end">
+                    <div
+                        dangerouslySetInnerHTML={{ __html: html }}
+                        className="document-preview-content w-full [&_p]:mb-3 [&_p]:leading-relaxed"
+                    />
+                </div>
+            </div>
+        );
+    }
+
+    return (
+        <div
+            dangerouslySetInnerHTML={{ __html: html }}
+            className="document-preview-content line-clamp-[12] overflow-hidden text-ellipsis break-words [&_p]:mb-3 [&_p]:leading-relaxed"
+        />
+    );
+}, (prev, next) => prev.html === next.html);
+
 export default function DocumentPreviewCard({
     doc,
     highlights = [],
     isActive,
-    isDragOver,
-    onDragOver,
-    onDragLeave,
-    onDrop,
     onDelete,
     onTitleUpdate,
     autoFocus = false
@@ -47,6 +84,11 @@ export default function DocumentPreviewCard({
     const [isEditing, setIsEditing] = useState(false);
     const [title, setTitle] = useState(doc.title);
     const inputRef = useRef<HTMLInputElement>(null);
+
+    const { isOver, setNodeRef } = useDroppable({
+        id: doc.id,
+        data: doc
+    });
 
     // Auto-focus if requested
     if (autoFocus && inputRef.current && document.activeElement !== inputRef.current) {
@@ -66,56 +108,10 @@ export default function DocumentPreviewCard({
         }
     };
 
-    const renderContent = () => {
-        if (!doc.content) {
-            return <div className="italic opacity-50">Drop highlights here or start writing...</div>;
-        }
-
-        const isLongContent = doc.content.length > 1200; // Increased threshold to prevent duplication on medium files
-
-        if (isLongContent) {
-            return (
-                <div className="flex flex-col h-full">
-                    {/* Top Half */}
-                    <div
-                        dangerouslySetInnerHTML={{ __html: doc.content }}
-                        className="document-preview-content h-1/2 overflow-hidden [&_p]:mb-3 [&_p]:leading-relaxed"
-                    />
-
-                    {/* Separator */}
-                    <div className="flex items-center justify-center gap-2 py-3 text-muted opacity-50">
-                        <div className="h-px flex-1 bg-border"></div>
-                        <span className="text-xs tracking-[2px]">•••</span>
-                        <div className="h-px flex-1 bg-border"></div>
-                    </div>
-
-                    {/* Bottom Half */}
-                    <div className="h-1/2 overflow-hidden flex items-end">
-                        <div
-                            dangerouslySetInnerHTML={{ __html: doc.content }}
-                            className="document-preview-content w-full [&_p]:mb-3 [&_p]:leading-relaxed"
-                        />
-                    </div>
-                </div>
-            );
-        }
-
-        return (
-            <>
-                <div
-                    dangerouslySetInnerHTML={{ __html: doc.content }}
-                    className="document-preview-content line-clamp-[12] overflow-hidden text-ellipsis break-words [&_p]:mb-3 [&_p]:leading-relaxed"
-                />
-            </>
-        );
-    };
-
     return (
         <div
+            ref={setNodeRef}
             data-id={doc.id}
-            onDragOver={(e) => onDragOver(e, doc.id)}
-            onDragLeave={onDragLeave}
-            onDrop={(e) => onDrop(e, doc.id)}
             className="document-wrapper group/wrapper w-full max-w-[650px] flex flex-col items-center gap-4 px-5 opacity-100 transition-opacity duration-300 snap-center"
         >
             <div
@@ -138,7 +134,7 @@ export default function DocumentPreviewCard({
                         router.push(`/?doc=${doc.id}`);
                     }
                 }}
-                className={`document-paper group relative flex flex-col w-[450px] max-w-full aspect-[1/1.414] bg-surface rounded-sm p-10 cursor-pointer transition-all duration-300 overflow-hidden hover:-translate-y-0.5 ${isActive ? 'scale-100 shadow-[0_20px_25px_-5px_rgba(0,0,0,0.05),0_8px_10px_-6px_rgba(0,0,0,0.01)]' : 'scale-95'} ${isDragOver ? 'border-2 border-primary shadow-[0_0_0_4px_hsl(var(--primary)/0.2),_var(--shadow-xl)]' : 'border-none'}`}
+                className={`document-paper group relative flex flex-col w-[450px] max-w-full aspect-[1/1.414] bg-surface rounded-sm p-10 cursor-pointer transition-all duration-300 overflow-hidden hover:-translate-y-0.5 ${isActive ? 'scale-100 shadow-[0_20px_25px_-5px_rgba(0,0,0,0.05),0_8px_10px_-6px_rgba(0,0,0,0.01)]' : 'scale-95'} ${isOver ? 'border-2 border-primary shadow-[0_0_0_4px_hsl(var(--primary)/0.2),_var(--shadow-xl)] scale-[1.02] rotate-1' : 'border-none'}`}
             >
                 {/* Title Row */}
                 <div
@@ -168,7 +164,7 @@ export default function DocumentPreviewCard({
                 </div>
 
                 <div className="text-sm text-muted leading-relaxed whitespace-pre-wrap overflow-hidden flex-1 [mask-image:linear-gradient(to_bottom,black_90%,transparent_100%)]">
-                    {renderContent()}
+                    <DocumentContentPreview html={doc.content} />
                 </div>
 
                 <div className="text-xs text-muted mt-auto pt-4 shrink-0">
