@@ -16,7 +16,7 @@ interface HighlightFeedProps {
 }
 
 // Draggable Wrapper Component
-function DraggableHighlightWrapper({ highlight, children }: { highlight: HighlightType, children: React.ReactNode }) {
+function DraggableHighlightWrapper({ highlight, children, type }: { highlight: HighlightType, children: React.ReactNode, type: 'unassigned' | 'assigned' }) {
     const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
         id: highlight.id,
         data: highlight
@@ -40,7 +40,7 @@ function DraggableHighlightWrapper({ highlight, children }: { highlight: Highlig
         return (
             <motion.div
                 ref={setNodeRef}
-                layoutId={highlight.id}
+                layoutId={`${highlight.id}-${type}`}
                 className="aspect-square rounded-2xl bg-muted/10 border-2 border-dashed border-muted/20"
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
@@ -52,7 +52,7 @@ function DraggableHighlightWrapper({ highlight, children }: { highlight: Highlig
     return (
         <motion.div
             ref={setNodeRef}
-            layoutId={highlight.id}
+            layoutId={`${highlight.id}-${type}`}
             {...listeners}
             {...attributes}
             className="cursor-grab active:cursor-grabbing origin-center"
@@ -103,7 +103,7 @@ export default function HighlightFeed({
                     {/* Unassigned Highlights */}
                     <AnimatePresence mode='popLayout'>
                         {unassignedHighlights.map((highlight) => (
-                            <DraggableHighlightWrapper key={highlight.id} highlight={highlight}>
+                            <DraggableHighlightWrapper key={highlight.id} highlight={highlight} type="unassigned">
                                 <HighlightCard
                                     id={highlight.id}
                                     text={highlight.text}
@@ -134,7 +134,7 @@ export default function HighlightFeed({
                             <AnimatePresence mode='popLayout'>
                                 {assignedHighlights.map((highlight) => (
                                     <div key={highlight.id} className="opacity-80">
-                                        <DraggableHighlightWrapper highlight={highlight}>
+                                        <DraggableHighlightWrapper highlight={highlight} type="assigned">
                                             <HighlightCard
                                                 id={highlight.id}
                                                 text={highlight.text}

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, Suspense } from 'react';
+import { useState, useEffect, useRef, Suspense, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useToast } from '@/contexts/ToastContext';
 import { useStorage } from '@/contexts/StorageContext';
@@ -30,7 +30,7 @@ import {
 
 const defaultDropAnimation = {
   duration: 300,
-  easing: 'cubic-bezier(0.18, 0.67, 0.6, 1.22)',
+  easing: 'cubic-bezier(0.60, 0.04, 0.98, 0.34)',
 };
 
 function HomeContent() {
@@ -64,6 +64,7 @@ function HomeContent() {
   const [processingDropId, setProcessingDropId] = useState<string | null>(null);
   // Conditional drop animation (null = instant vanish, object = fly back)
   const [dropAnimation, setDropAnimation] = useState<typeof defaultDropAnimation | null>(defaultDropAnimation);
+  const dragPreviewRef = useRef<HTMLDivElement>(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -177,6 +178,8 @@ function HomeContent() {
     const item = highlights.find(h => h.id === active.id);
     if (item) {
       setActiveDragItem(item);
+      // Reset to default (fly back) by default
+      setDropAnimation(defaultDropAnimation);
     }
   };
 
@@ -190,6 +193,13 @@ function HomeContent() {
     } else {
       // Invalid drop: Fly back to original position
       setDropAnimation(defaultDropAnimation);
+
+      // Animate rotation back to 0 smoothly during flyback
+      if (dragPreviewRef.current) {
+        dragPreviewRef.current.style.transition = 'all 300ms cubic-bezier(0.60, 0.04, 0.98, 0.34)';
+        dragPreviewRef.current.style.transform = 'rotate(0deg)';
+        dragPreviewRef.current.style.boxShadow = '0 1px 2px 0 rgb(0 0 0 / 0.05)'; // shadow-sm
+      }
     }
 
     // Delay clearing active item to ensure dropAnimation prop updates first
@@ -404,7 +414,7 @@ function HomeContent() {
 
         <DragOverlay dropAnimation={dropAnimation}>
           {activeDragItem ? (
-            <div className="w-[180px] rotate-2 scale-105 shadow-2xl cursor-grabbing">
+            <div ref={dragPreviewRef} className="w-[220px] h-[220px] -rotate-6 shadow-2xl cursor-grabbing">
               <HighlightCard
                 // @ts-ignore
                 id={activeDragItem.id}
@@ -414,8 +424,11 @@ function HomeContent() {
                 favicon={activeDragItem.favicon}
                 createdAt={activeDragItem.createdAt}
                 color={activeDragItem.color}
-                // Props not needed for drag preview
-                documents={[]}
+                documentId={activeDragItem.documentId || undefined}
+                documentIds={activeDragItem.documentIds}
+                // @ts-ignore
+                documents={documents}
+                className="w-full h-full"
               />
             </div>
           ) : null}

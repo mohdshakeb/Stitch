@@ -35,44 +35,15 @@ const DocumentContentPreview = memo(({ html }: { html: string }) => {
         return <div className="italic opacity-50">Drop highlights here or start writing...</div>;
     }
 
-    const isLongContent = html.length > 1200;
-
-    if (isLongContent) {
-        return (
-            <div className="flex flex-col h-full">
-                {/* Top Half */}
-                <div
-                    dangerouslySetInnerHTML={{ __html: html }}
-                    className="document-preview-content h-1/2 overflow-hidden [&_p]:mb-3 [&_p]:leading-relaxed"
-                />
-
-                {/* Separator */}
-                <div className="flex items-center justify-center gap-2 py-3 text-muted opacity-50">
-                    <div className="h-px flex-1 bg-border"></div>
-                    <span className="text-xs tracking-[2px]">•••</span>
-                    <div className="h-px flex-1 bg-border"></div>
-                </div>
-
-                {/* Bottom Half */}
-                <div className="h-1/2 overflow-hidden flex items-end">
-                    <div
-                        dangerouslySetInnerHTML={{ __html: html }}
-                        className="document-preview-content w-full [&_p]:mb-3 [&_p]:leading-relaxed"
-                    />
-                </div>
-            </div>
-        );
-    }
-
     return (
         <div
             dangerouslySetInnerHTML={{ __html: html }}
-            className="document-preview-content line-clamp-[12] overflow-hidden text-ellipsis break-words [&_p]:mb-3 [&_p]:leading-relaxed"
+            className="document-preview-content [&_p]:mb-3 [&_p]:leading-relaxed"
         />
     );
 }, (prev, next) => prev.html === next.html);
 
-export default function DocumentPreviewCard({
+const DocumentPreviewCard = memo(function DocumentPreviewCard({
     doc,
     highlights = [],
     isActive,
@@ -174,4 +145,14 @@ export default function DocumentPreviewCard({
 
         </div >
     );
-}
+}, (prevProps, nextProps) => {
+    // Custom comparison function for performance
+    return prevProps.doc.id === nextProps.doc.id &&
+        prevProps.doc.content === nextProps.doc.content &&
+        prevProps.doc.title === nextProps.doc.title &&
+        (prevProps.highlights?.length ?? 0) === (nextProps.highlights?.length ?? 0) &&
+        prevProps.isActive === nextProps.isActive &&
+        prevProps.autoFocus === nextProps.autoFocus;
+});
+
+export default DocumentPreviewCard;

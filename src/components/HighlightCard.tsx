@@ -20,6 +20,7 @@ interface HighlightProps {
     onMove?: (documentId: string | null) => void;
     activeDocId?: string | null;
     color?: string | null;
+    className?: string;
 }
 
 export default function HighlightCard({
@@ -35,7 +36,8 @@ export default function HighlightCard({
     onDelete,
     onMove,
     activeDocId,
-    color
+    color,
+    className = ''
 }: HighlightProps) {
     const [showActions, setShowActions] = useState(false);
     const [showMoveMenu, setShowMoveMenu] = useState(false);
@@ -143,7 +145,6 @@ export default function HighlightCard({
                         transition: { type: 'spring', stiffness: 280, damping: 20, delay: 0 } // No delay on exit
                     }}
                     onClick={(e) => e.stopPropagation()}
-                    onClick={(e) => e.stopPropagation()}
                     className="w-[90%] max-w-[500px] aspect-square rounded p-10 shadow-xl flex flex-col relative -rotate-1"
                     style={{
                         backgroundColor: bg,
@@ -195,7 +196,7 @@ export default function HighlightCard({
     return (
         <>
             <div
-                className={`relative border-none rounded-2xl shadow-sm p-6 transition-all duration-200 aspect-square flex flex-col cursor-grab ${showActions ? 'z-20 shadow-xl scale-105 -rotate-1' : 'z-1 rotate-0'}`}
+                className={`relative border-none rounded-2xl shadow-sm p-6 transition-all duration-200 aspect-square flex flex-col cursor-grab ${showActions ? 'z-20 shadow-xl scale-105 -rotate-1' : 'z-1 rotate-0'} ${className}`}
                 onClick={handleCardClick}
                 onMouseEnter={() => setShowActions(true)}
                 onMouseLeave={() => setShowActions(false)}
@@ -204,7 +205,7 @@ export default function HighlightCard({
                     color: styles.textColor,
                 }}
             >
-                {showActions && (
+                {showActions && onDelete && (
                     <div
                         className="absolute -top-3 -right-3 flex gap-1 z-10"
                         onClick={(e) => e.stopPropagation()}
