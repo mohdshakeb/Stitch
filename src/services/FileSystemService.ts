@@ -288,7 +288,7 @@ export class FileSystemService {
     }
 
     async removeWorkspace(id: string): Promise<void> {
-        console.log(`Removing workspace ${id}. Current active: ${this.currentWorkspaceId}`);
+
         const db = await this.dbPromise;
         const list = (await db.get(STORE_NAME, WORKSPACES_KEY) as WorkspaceMetadata[]) || [];
         const updatedList = list.filter(w => w.id !== id);
@@ -303,7 +303,7 @@ export class FileSystemService {
             // This case shouldn't happen via the "switch failed" flow, but for robustness:
             // await this.disconnect();
         } else {
-            console.log('Removed workspace was not active. Safe.');
+            // Removed workspace was not active. Safe.
         }
     }
 
@@ -337,14 +337,14 @@ export class FileSystemService {
     private async seedData(initialHighlights?: HighlightType[]): Promise<void> {
         // If initialHighlights provided (Sync or Clone), we always WRITE using them.
         if (initialHighlights && initialHighlights.length > 0) {
-            console.log('Writing provided highlights (Sync/Clone)...');
+
             await this.writeJsonFile(HIGHLIGHTS_FILE, initialHighlights);
         } else {
             // Default Seeding or Migration
             let highlights = await this.readJsonFile<HighlightType[]>(HIGHLIGHTS_FILE, null as any);
 
             if (!highlights) {
-                console.log('Seeding default highlights...');
+
                 // Default Seed logic
                 const seededHighlights = SEED_HIGHLIGHTS.map(h => ({
                     ...h,
@@ -371,7 +371,7 @@ export class FileSystemService {
                 });
 
                 if (needsUpdate) {
-                    console.log('Migrating legacy seed colors...');
+
                     await this.writeJsonFile(HIGHLIGHTS_FILE, highlights);
                 }
             }
@@ -380,7 +380,7 @@ export class FileSystemService {
         // Check if documents exist
         const docs = await this.readJsonFile<DocumentType[]>(DOCUMENTS_FILE, null as any);
         if (!docs) {
-            console.log('Seeding initial documents...');
+
             // If we cloned highlights, we probably want NO documents (clean slate), 
             // or just the default seeds but empty?
             // User request: "Documents will remain empty".

@@ -15,7 +15,7 @@ interface HighlightProps {
     createdAt: string;
     documentId?: string | null;
     documentIds?: string[];
-    documents?: { id: string; title: string }[];
+    documents?: { id: string; title: string;[key: string]: any }[]; // Allow full document objects
     onDelete?: (id: string, e: React.MouseEvent) => void;
     onMove?: (documentId: string | null) => void;
     activeDocId?: string | null;

@@ -7,6 +7,7 @@ import {
     RiSunLine,
     RiMoonLine
 } from '@remixicon/react';
+import { motion } from 'framer-motion';
 
 import { useTheme } from 'next-themes';
 import { useEffect, useState, useRef } from 'react';
@@ -23,7 +24,7 @@ interface HeaderProps {
 }
 
 export default function Header({ variant = 'default', actions }: HeaderProps) {
-    const { theme, setTheme } = useTheme();
+    const { theme, setTheme, resolvedTheme } = useTheme();
     const [mounted, setMounted] = useState(false);
     const router = useRouter();
     const { workspaces, activeWorkspaceId, createWorkspace, switchWorkspace, disconnect, removeWorkspace, isConnected } = useStorage();
@@ -64,7 +65,16 @@ export default function Header({ variant = 'default', actions }: HeaderProps) {
     if (!mounted) return null;
 
     return (
-        <header className="fixed top-0 left-0 right-0 h-[60px] flex items-center justify-between px-6 z-50 bg-transparent pointer-events-none">
+        <motion.header
+            initial={{ y: -100, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{
+                duration: 0.5,
+                delay: 0.6,
+                ease: [0.175, 0.885, 0.32, 1.1]
+            }}
+            className="fixed top-0 left-0 right-0 h-[60px] flex items-center justify-between px-6 z-50 bg-transparent pointer-events-none"
+        >
             <div className="flex items-center pointer-events-auto">
                 {variant === 'back' ? (
                     <button
@@ -78,7 +88,7 @@ export default function Header({ variant = 'default', actions }: HeaderProps) {
                     </button>
                 ) : (
                     <Image
-                        src={theme === 'dark' ? "/logo-dark.png" : "/logo.png"}
+                        src={resolvedTheme === 'dark' ? "/logo-dark.png" : "/logo.png"}
                         alt="App Logo"
                         width={120}
                         height={40}
@@ -156,6 +166,6 @@ export default function Header({ variant = 'default', actions }: HeaderProps) {
                     )}
                 </button>
             </div>
-        </header>
+        </motion.header>
     );
 }

@@ -27,7 +27,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     const [toasts, setToasts] = useState<Array<{ id: string; message: string } & ToastOptions>>([]);
 
     const showToast = useCallback((message: string, options?: ToastOptions) => {
-        console.log('Showing toast:', message, options);
+
         const id = Math.random().toString(36).substring(2, 9);
         setToasts((prev) => [...prev, { id, message, ...options }]);
     }, []);

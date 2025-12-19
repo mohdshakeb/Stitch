@@ -49,7 +49,7 @@ export function StorageProvider({ children }: { children: React.ReactNode }) {
         if (!extensionId || typeof chrome === 'undefined' || !chrome.runtime || !fileSystemService.isConnected()) return;
 
         try {
-            console.log('Syncing with extension...', extensionId);
+
             const response = await new Promise<{ highlights: HighlightType[] }>((resolve, reject) => {
                 // Set a timeout to avoid hanging forever if extension doesn't respond
                 const timeout = setTimeout(() => {
@@ -73,7 +73,7 @@ export function StorageProvider({ children }: { children: React.ReactNode }) {
             });
 
             if (response && response.highlights && Array.isArray(response.highlights) && response.highlights.length > 0) {
-                console.log(`Found ${response.highlights.length} pending highlights from extension.`);
+
 
                 // Save locally
                 for (const h of response.highlights) {
@@ -206,11 +206,11 @@ export function StorageProvider({ children }: { children: React.ReactNode }) {
     };
 
     const removeWorkspace = async (id: string) => {
-        console.log('Context: Removing workspace', id);
+
         await fileSystemService.removeWorkspace(id);
-        console.log('Context: Refreshing data after removal...');
+
         await refreshData();
-        console.log('Context: Refresh complete.');
+
     };
 
     const disconnect = async () => {

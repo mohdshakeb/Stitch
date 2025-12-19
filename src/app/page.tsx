@@ -27,6 +27,7 @@ import {
   DragStartEvent,
   DragEndEvent,
 } from '@dnd-kit/core';
+import { motion } from 'framer-motion';
 
 const defaultDropAnimation = {
   duration: 300,
@@ -347,12 +348,10 @@ function HomeContent() {
 
   // --- Render ---
 
+
+
   if (isConnecting) {
-    return (
-      <div className="flex h-screen items-center justify-center">
-        Loading...
-      </div>
-    );
+    return null; // Or a loading spinner if preferred, but null prevents flash
   }
 
   if (!isConnected) {
@@ -375,40 +374,69 @@ function HomeContent() {
     <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
       <StitchLayout>
         {/* 1. Left Column: Highlight Stream */}
-        <HighlightFeed
-          highlights={highlights}
-          documents={documents}
-          activeDocId={activeDocId}
-          selectedCategory={selectedCategory}
-          filteredIds={processingDropId ? [processingDropId] : []}
-          handleDeleteHighlight={handleDeleteHighlight}
-          handleMoveHighlight={handleMoveHighlight}
-        />
+        <motion.div
+          initial={{ x: -30, opacity: 0 }}
+          animate={{ x: 0, opacity: 1 }}
+          transition={{
+            duration: 1,
+            ease: [0.175, 0.885, 0.32, 1.1],
+            delay: 0.5,
+          }}
+          className="h-screen w-[240px]"
+        >
+          <HighlightFeed
+            highlights={highlights}
+            documents={documents}
+            activeDocId={activeDocId}
+            selectedCategory={selectedCategory}
+            filteredIds={processingDropId ? [processingDropId] : []}
+            handleDeleteHighlight={handleDeleteHighlight}
+            handleMoveHighlight={handleMoveHighlight}
+          />
+        </motion.div>
 
         {/* 2. Center Column: Document Feed */}
-        <DocumentFeed
-          ref={scrollContainerRef}
-          documents={documents}
-          highlights={highlights}
-          activeDocId={activeDocId}
-          newlyCreatedDocId={newlyCreatedDocId}
-          handleDeleteDocument={handleDeleteDocument}
-          handleTitleUpdate={handleTitleUpdate}
-          handleCreateDocument={handleCreateDocument}
-        />
+        <motion.div
+          initial={{ opacity: 0, scale: 0.98 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.5, ease: 'easeOut' }}
+          className="h-screen flex-[0.8]"
+        >
+          <DocumentFeed
+            ref={scrollContainerRef}
+            documents={documents}
+            highlights={highlights}
+            activeDocId={activeDocId}
+            newlyCreatedDocId={newlyCreatedDocId}
+            handleDeleteDocument={handleDeleteDocument}
+            handleTitleUpdate={handleTitleUpdate}
+            handleCreateDocument={handleCreateDocument}
+          />
+        </motion.div>
 
         {/* 3. Right Column: Sidebar & Navigation */}
-        <RightSidebar
-          documents={documents}
-          highlights={highlights}
-          activeDocId={activeDocId}
-          scrollToDocument={scrollToDocument}
-          isExtensionAvailable={isExtensionAvailable}
-          setIsInstallModalOpen={setIsInstallModalOpen}
-          selectedCategory={selectedCategory}
-          setSelectedCategory={setSelectedCategory}
-          handleCreateDocument={handleCreateDocument}
-        />
+        <motion.div
+          initial={{ x: 30, opacity: 0 }}
+          animate={{ x: 0, opacity: 1 }}
+          transition={{
+            duration: 1,
+            ease: [0.175, 0.885, 0.32, 1.1],
+            delay: 0.5,
+          }}
+          className="h-screen w-[250px]"
+        >
+          <RightSidebar
+            documents={documents}
+            highlights={highlights}
+            activeDocId={activeDocId}
+            scrollToDocument={scrollToDocument}
+            isExtensionAvailable={isExtensionAvailable}
+            setIsInstallModalOpen={setIsInstallModalOpen}
+            selectedCategory={selectedCategory}
+            setSelectedCategory={setSelectedCategory}
+            handleCreateDocument={handleCreateDocument}
+          />
+        </motion.div>
 
         <InstallExtensionModal isOpen={isInstallModalOpen} onClose={() => setIsInstallModalOpen(false)} />
 
@@ -416,7 +444,6 @@ function HomeContent() {
           {activeDragItem ? (
             <div ref={dragPreviewRef} className="w-[220px] h-[220px] -rotate-6 shadow-2xl cursor-grabbing">
               <HighlightCard
-                // @ts-ignore
                 id={activeDragItem.id}
                 text={activeDragItem.text}
                 url={activeDragItem.url}
@@ -426,7 +453,6 @@ function HomeContent() {
                 color={activeDragItem.color}
                 documentId={activeDragItem.documentId || undefined}
                 documentIds={activeDragItem.documentIds}
-                // @ts-ignore
                 documents={documents}
                 className="w-full h-full"
               />

@@ -1,7 +1,17 @@
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600&family=Inter:wght@300;400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300..800&family=Lateef:wght@200;300;400;500;600;700;800&family=Outfit:wght@300;400;500;600&display=swap');
 
 
 :root {
+  /* Colors - HSL for easy manipulation */
+  /* Calm Greens Theme - Neutral Surfaces */
+
+  /* Background: Off-White (#FAFAF8) */
+  --background: 60 11% 98%;
+
+  /* ... (color vars skipped for brevity in tool call, will rely on maintaining start/end context) ... */
+  /* Actually replace_file_content needs exact context. I should target the top block specifically or just use a replace for the lines that changed. */
+
+  /* Let's try targeting specific blocks to avoid huge context matching */
   /* Colors - HSL for easy manipulation */
   /* Calm Greens Theme - Neutral Surfaces */
 
@@ -15,10 +25,8 @@
      Let's keep Deep Spruce for text as it's very dark and fits better than pure black. */
   --foreground: 168 40% 17%;
 
-  /* Muted: Fog Grey (#E9ECEA) - Used for secondary text/borders usually?
-     Actually --muted is usually text color. Let's use a darker grey for muted text.
-     Fog Grey is #E9ECEA. That's too light for text. It's good for backgrounds/borders. */
-  --muted: 210 7% 40%;
+  /* Muted: Sage Grey */
+  --muted: 160 6% 45%;
   /* Neutral Grey for text */
 
   /* Border: Fog Grey (#E9ECEA) */
@@ -27,7 +35,7 @@
   /* Primary: Unified Green (Emerald 500-ish) - Works on Light & Dark */
   /* #10B981 -> 159 84% 39% (Adjusted for better contrast) */
   /* Let's try a slightly deeper, rich green: #059669 -> 160 84% 39% */
-  --primary: 160 84% 39%;
+  --primary: 160 40% 27%;
   --primary-foreground: 0 0% 100%;
   /* White text always works on this green */
 
@@ -56,8 +64,10 @@
   --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
 
   /* Typography */
-  --font-sans: 'Inter', sans-serif;
+  --font-sans: 'DM Sans', sans-serif;
   --font-heading: 'Outfit', sans-serif;
+  /* Keeping Outfit for headings for now */
+  --font-urdu: 'Lateef', serif;
 
   /* --- Category Colors (Light Mode) --- */
   /* Social: Yellow */
@@ -107,7 +117,7 @@
   --border: 160 6% 16%;
 
   /* Primary: Same Unified Green */
-  --primary: 160 84% 39%;
+  --primary: 160 40% 27%;
   --primary-foreground: 0 0% 100%;
 
   /* Accent: Darker Teal Grey */
@@ -200,6 +210,12 @@ a {
     /* IE and Edge */
     scrollbar-width: none;
     /* Firefox */
+  }
+
+  .font-urdu {
+    font-family: var(--font-urdu);
+    line-height: 1.8;
+    /* Urdu often needs taller lines */
   }
 }
 

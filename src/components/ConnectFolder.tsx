@@ -5,85 +5,258 @@ import Image from 'next/image';
 import { useTheme } from 'next-themes';
 import { useStorage } from '@/contexts/StorageContext';
 import { RiShieldCheckLine } from '@remixicon/react';
+import { motion } from 'framer-motion';
+import FolderConnectIcon from './FolderConnectIcon';
+import DraggableStickyItem from './DraggableStickyItem';
+
+
+// Consistent Category Colors (Using CSS Variables for Light/Dark mode support)
+const CATEGORY_THEME = {
+    social: { bg: 'var(--cat-social-bg)', text: 'var(--cat-social-text)' },
+    article: { bg: 'var(--cat-article-bg)', text: 'var(--cat-article-text)' },
+    academic: { bg: 'var(--cat-academic-bg)', text: 'var(--cat-academic-text)' },
+    ai: { bg: 'var(--cat-ai-bg)', text: 'var(--cat-ai-text)' },
+    other: { bg: 'var(--cat-other-bg)', text: 'var(--cat-other-text)' }
+};
+
+// Mock data with segmented story
+const MOCK_STICKIES = [
+    {
+        id: 'mock-1',
+        text: "A place where ideas come together. Gently, naturally, piece by piece.",
+        url: "",
+        createdAt: new Date().toISOString(),
+        title: "",
+        theme: CATEGORY_THEME.social
+    },
+    {
+        id: 'mock-2',
+        text: "Stitch meaning out of what already moved you.",
+        url: "",
+        createdAt: new Date().toISOString(),
+        title: "",
+        theme: CATEGORY_THEME.article
+    },
+    {
+        id: 'mock-3',
+        text: "Stitch isn’t about capturing everything. It’s about connecting the right things.",
+        url: "",
+        createdAt: new Date().toISOString(),
+        title: "",
+        theme: CATEGORY_THEME.academic
+    },
+    {
+        id: 'mock-4',
+        text: "Make your ideas learn to belong to each other.",
+        url: "",
+        createdAt: new Date().toISOString(),
+        title: "",
+        theme: CATEGORY_THEME.ai
+    },
+    {
+        id: 'mock-5',
+        text: "Stitch is the gathering place where your scattered fragments finally meet.",
+        url: "",
+        createdAt: new Date().toISOString(),
+        title: "",
+        theme: CATEGORY_THEME.other
+    },
+    {
+        id: 'mock-6',
+        text: "This isn’t about capturing everything. It’s about capturing the right things.",
+        url: "",
+        createdAt: new Date().toISOString(),
+        title: "",
+        theme: CATEGORY_THEME.social
+    },
+    {
+        id: 'mock-7',
+        text: "Connect your thoughts thoughtfully, intuitively, and at your own pace.",
+        url: "",
+        createdAt: new Date().toISOString(),
+        title: "",
+        theme: CATEGORY_THEME.article
+    },
+    {
+        id: 'mock-8',
+        text: "Ideas behave differently here. Here, they learn to belong to each other.",
+        url: "",
+        createdAt: new Date().toISOString(),
+        title: "",
+        theme: CATEGORY_THEME.academic
+    }
+];
 
 export default function ConnectFolder() {
     const { connect, connectInternal, isConnecting } = useStorage();
-    const { theme, resolvedTheme } = useTheme();
+    const { resolvedTheme } = useTheme();
     const [isSupported, setIsSupported] = useState(true);
     const [mounted, setMounted] = useState(false);
+    const [positions, setPositions] = useState<{ x: number; y: number; rotate: number }[]>([]);
+
+    // Z-Index State Management
+    // Start at 40 to ensure they are above the center content (z-30)
+    const [zIndices, setZIndices] = useState<number[]>(MOCK_STICKIES.map((_, i) => i + 40));
+    const [topZIndex, setTopZIndex] = useState(MOCK_STICKIES.length + 40);
+
+    const handleDragStart = (index: number) => {
+        const newZ = topZIndex + 1;
+        setTopZIndex(newZ);
+        setZIndices(prev => {
+            const next = [...prev];
+            next[index] = newZ;
+            return next;
+        });
+    };
 
     useEffect(() => {
         setMounted(true);
         if (typeof window !== 'undefined' && !('showDirectoryPicker' in window)) {
             setIsSupported(false);
         }
+
+        // --- Position Generation (Polar Distribution) ---
+        const width = window.innerWidth;
+        const height = window.innerHeight;
+        const centerX = width / 2;
+        const centerY = height / 2;
+
+        // Config
+        const cardSize = 180;
+
+        // Radius Calculation based on screen size
+        // We want them to circle the center content.
+        // Base distance from center. 
+        // Min distance needs to clear the center zone (approx 300px radius ideally)
+        // Distribute items avoiding Top (270) and Bottom (90) zones
+        // Split into Left Sector (135-225) and Right Sector (315-45)
+
+        // Fix radius to be outside center but on screen
+        const minDimension = Math.min(width, height);
+        const minRadius = minDimension * 0.42;
+        const maxRadius = minDimension * 0.85;
+
+        const generatedPositions: { x: number; y: number; rotate: number }[] = [];
+
+        for (let i = 0; i < MOCK_STICKIES.length; i++) {
+            let targetAngleDeg;
+
+            // First 4 items on Right Side (-45 to 45)
+            // Next 4 items on Left Side (135 to 225)
+            if (i < 4) {
+                // Right Sector: Spread between 315 (-45) and 45. 
+                // Steps: -40, -15, 15, 40
+                const step = 90 / 4;
+                const start = 315 + (step / 2);
+                targetAngleDeg = start + (i * step);
+            } else {
+                // Left Sector: Spread between 135 and 225.
+                const step = 90 / 4;
+                const start = 135 + (step / 2);
+                targetAngleDeg = start + ((i - 4) * step);
+            }
+
+            // Add some randomness to angle (+/- 5 deg)
+            const angleJitter = (Math.random() * 10 - 5);
+            const finalAngleRad = (targetAngleDeg + angleJitter) * (Math.PI / 180);
+
+            // Random radius
+            const radius = minRadius + Math.random() * (maxRadius - minRadius);
+
+            // Calculate Position
+            let x = centerX + Math.cos(finalAngleRad) * radius - (cardSize / 2);
+            let y = centerY + Math.sin(finalAngleRad) * radius - (cardSize / 2);
+
+            // Clamp to screen bounds (with padding)
+            const padding = 16;
+            x = Math.max(padding, Math.min(width - cardSize - padding, x));
+            y = Math.max(padding, Math.min(height - cardSize - padding, y));
+
+            // Tilt
+            // Alternate tilt direction to prevent bunching of same angles
+            const sign = i % 2 === 0 ? 1 : -1;
+            const magnitude = Math.random() * 10 + 5; // 5 to 15 degrees
+            const rotate = sign * magnitude;
+
+            generatedPositions.push({ x, y, rotate });
+        }
+
+        setPositions(generatedPositions);
     }, []);
 
     if (!mounted) return null;
 
     return (
-        <div className="h-screen flex flex-col items-center justify-center gap-8 bg-background text-foreground p-6 text-center">
+        <div className="relative h-screen w-full overflow-hidden bg-background text-foreground">
 
-            {/* 1. Logo */}
-            <div className="relative w-[200px] h-[60px] mb-2">
-                <Image
-                    src={resolvedTheme === 'dark' ? "/header-logo-dark.png" : "/header-logo.png"}
-                    alt="Logo"
-                    fill
-                    className="object-contain"
-                    priority
+            {/* 1. Draggable Sticky Notes Layer */}
+            {positions.map((pos, index) => (
+                <DraggableStickyItem
+                    key={MOCK_STICKIES[index].id}
+                    item={MOCK_STICKIES[index]}
+                    initialX={pos.x}
+                    initialY={pos.y}
+                    initialRotate={pos.rotate}
+                    zIndex={zIndices[index]}
+                    onDragStart={() => handleDragStart(index)}
+                    topZIndex={topZIndex}
                 />
-            </div>
+            ))}
 
-            {/* 2. Message */}
-            <div className="flex flex-col items-center gap-3 max-w-[480px]">
-                <h1 className="text-3xl font-semibold leading-tight tracking-tight">
-                    Collect snippets. Stitch your story.
-                </h1>
+            {/* 2. Center Content Layer */}
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-30">
+                <div className="pointer-events-auto flex flex-col items-center justify-center gap-2 p-4 text-center max-w-[600px]">
 
-                <p className="text-base text-muted leading-relaxed">
-                    Begin by creating a workspace. Simply select a local folder to safely store your research and notes.
-                </p>
-            </div>
+                    {/* Logo - Reduced Size */}
+                    <div className="relative w-[200px] h-[48px] mb-1">
+                        <Image
+                            src={resolvedTheme === 'dark' ? "/logo-dark.png" : "/logo.png"}
+                            alt="Logo"
+                            fill
+                            className="object-contain"
+                            priority
+                        />
+                    </div>
 
-            {/* 3. Action */}
-            <div className="flex flex-col items-center gap-4 w-full max-w-[320px]">
-                <button
-                    onClick={connect}
-                    disabled={isConnecting}
-                    className="w-full px-7 py-3.5 bg-primary text-primary-foreground border-none rounded-lg text-base font-medium cursor-pointer shadow-md transition-all duration-200 hover:-translate-y-px disabled:opacity-80 disabled:cursor-wait disabled:hover:translate-y-0"
-                >
-                    {isConnecting ? 'Creating Workspace...' : 'Create My Workspace'}
-                </button>
+                    <div className="flex flex-col items-center gap-4">
+                        <p className="text-lg text-muted font-medium leading-relaxed max-w-[450px]">
+                            Where Writing stops being a blank-page battle. It becomes an act of assembly.
+                        </p>
+                    </div>
 
-                {/* 4. Reassurance */}
-                <div className="flex items-center gap-1.5 opacity-80">
-                    <RiShieldCheckLine className="text-muted" />
-                    <span className="text-sm text-muted">
-                        100% Local. Your data stays safe with you.
-                    </span>
+                    {/* Action */}
+                    <div className="flex flex-col items-center gap-6 w-full mt-20">
+                        <div className="flex flex-col items-center gap-4 group cursor-pointer">
+                            <FolderConnectIcon onClick={connect} isConnecting={isConnecting} />
+
+                            <span className="text-foreground font-medium text-sm tracking-wide opacity-80 group-hover:opacity-100 transition-opacity">
+                                {isConnecting ? 'Opening Folder...' : 'Create or Open Your Workspace'}
+                            </span>
+                        </div>
+
+                        {isSupported && (
+                            <button
+                                onClick={connectInternal}
+                                className="bg-transparent border-none text-muted text-xs cursor-pointer underline hover:text-foreground transition-colors opacity-60 hover:opacity-100"
+                            >
+                                Use Browser Storage (Demo)
+                            </button>
+                        )}
+
+                        {!isSupported && (
+                            <p className="text-red-500 text-xs mt-2 opacity-80">
+                                Browser not fully supported.
+                                <button onClick={connectInternal} className="underline ml-1 cursor-pointer hover:text-foreground">
+                                    Try Internal Storage
+                                </button>
+                            </p>
+                        )}
+                    </div>
                 </div>
-            </div>
-
-            {/* 5. Fallbacks (Subtle) */}
-            <div className="mt-6 opacity-60">
-                {!isSupported && (
-                    <p className="text-red-500 text-xs mb-2">
-                        Browser not fully supported.
-                        <button onClick={connectInternal} className="underline ml-1 cursor-pointer">
-                            Try Internal Storage
-                        </button>
-                    </p>
-                )}
-                {isSupported && (
-                    <button
-                        onClick={connectInternal}
-                        className="bg-transparent border-none text-muted text-xs cursor-pointer underline hover:text-foreground"
-                    >
-                        Use Browser Storage (Demo)
-                    </button>
-                )}
             </div>
         </div>
     );
 }
+
+
+
