@@ -55,7 +55,7 @@ function DraggableHighlightWrapper({ highlight, children, type }: { highlight: H
             layoutId={`${highlight.id}-${type}`}
             {...listeners}
             {...attributes}
-            className="cursor-grab active:cursor-grabbing origin-center"
+            className="cursor-grab active:cursor-grabbing origin-center will-change-transform"
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 0.95 }}
             exit={{ opacity: 0, scale: 0, transition: { duration: 0.15 } }}
@@ -114,9 +114,7 @@ export default function HighlightFeed({
                                     documentId={highlight.documentId || null}
                                     onDelete={handleDeleteHighlight}
                                     onMove={handleMoveHighlight}
-                                    // @ts-ignore
                                     documents={documents}
-                                    // @ts-ignore
                                     activeDocId={activeDocId}
                                     color={highlight.color}
                                 />
@@ -146,9 +144,7 @@ export default function HighlightFeed({
                                                 documentIds={getDocIds(highlight)}
                                                 onDelete={handleDeleteHighlight}
                                                 onMove={handleMoveHighlight}
-                                                // @ts-ignore
                                                 documents={documents}
-                                                // @ts-ignore
                                                 activeDocId={activeDocId}
                                             />
                                         </DraggableHighlightWrapper>

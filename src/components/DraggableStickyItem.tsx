@@ -25,6 +25,7 @@ interface DraggableStickyItemProps {
     zIndex: number;
     onDragStart: () => void;
     topZIndex: number;
+    delay?: number;
 }
 
 export default function DraggableStickyItem({
@@ -34,9 +35,18 @@ export default function DraggableStickyItem({
     initialRotate,
     zIndex,
     onDragStart,
-    topZIndex
+    topZIndex,
+    delay = 0
 }: DraggableStickyItemProps) {
     const [isDragging, setIsDragging] = useState(false);
+    const [hasAppeared, setHasAppeared] = useState(false);
+
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setHasAppeared(true);
+        }, (delay * 1000) + 500);
+        return () => clearTimeout(timer);
+    }, [delay]);
 
     // Physics Hooks
     const x = useMotionValue(initialX);
@@ -63,7 +73,7 @@ export default function DraggableStickyItem({
     // 3. Combine Base + Tilt
     const rotate = useTransform(
         [smoothBaseRotation, smoothTilt],
-        ([base, t]) => base + t
+        (latest: number[]) => latest[0] + latest[1]
     );
 
     return (
@@ -84,7 +94,7 @@ export default function DraggableStickyItem({
                 touchAction: 'none',
                 transformOrigin: 'top center' // Pivot physics from the top (glue area)
             }}
-            initial={{ opacity: 0 }}
+            initial={{ opacity: 0, scale: 1.15 }}
             animate={{
                 opacity: 1,
                 zIndex: isDragging ? topZIndex + 100 : zIndex,
@@ -92,7 +102,7 @@ export default function DraggableStickyItem({
             }}
             whileHover={{ scale: isDragging ? 1.05 : 1.02, cursor: 'grab' }}
             whileDrag={{ cursor: 'grabbing' }}
-            transition={{ duration: 0.15 }} // Faster response
+            transition={hasAppeared ? { duration: 0.15 } : { delay, type: "spring", damping: 20, stiffness: 300 }}
             className="absolute w-[180px] h-[180px]"
         >
             <div className="pointer-events-none w-full h-full">

@@ -309,3 +309,24 @@ a {
   background-size: 200% 100%;
   background-position: 110% 0;
 }
+
+/* Fix View Transition Text Ghosting */
+::view-transition-old(*),
+::view-transition-new(*) {
+  mix-blend-mode: normal;
+}
+
+/* Custom View Transition Easing */
+::view-transition-group(*) {
+  animation-duration: 0.5s;
+  animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+  /* Smooth ease-out */
+}
+
+/* Performance Optimizations */
+.will-change-transform {
+  will-change: transform;
+  backface-visibility: hidden;
+  transform: translateZ(0);
+  /* Hardware acceleration hack for older browsers */
+}

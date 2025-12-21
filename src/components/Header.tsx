@@ -12,11 +12,10 @@ import { motion } from 'framer-motion';
 import { useTheme } from 'next-themes';
 import { useEffect, useState, useRef } from 'react';
 import Image from 'next/image';
-import Link from 'next/link';
 import { useStorage } from '@/contexts/StorageContext';
 import { useToast } from '@/contexts/ToastContext';
 
-import { useRouter } from 'next/navigation';
+import { useTransitionRouter } from 'next-view-transitions';
 
 interface HeaderProps {
     variant?: 'default' | 'back';
@@ -26,11 +25,10 @@ interface HeaderProps {
 export default function Header({ variant = 'default', actions }: HeaderProps) {
     const { theme, setTheme, resolvedTheme } = useTheme();
     const [mounted, setMounted] = useState(false);
-    const router = useRouter();
+    const router = useTransitionRouter();
     const { workspaces, activeWorkspaceId, createWorkspace, switchWorkspace, disconnect, removeWorkspace, isConnected } = useStorage();
 
     const [showWorkspaces, setShowWorkspaces] = useState(false);
-    const timeoutRef = useRef<NodeJS.Timeout | null>(null);
     const { showToast } = useToast();
 
     // Moved handleSwitchWorkspace outside of useEffect
@@ -52,7 +50,6 @@ export default function Header({ variant = 'default', actions }: HeaderProps) {
     useEffect(() => {
         setMounted(true);
 
-        // handleSwitchWorkspace is now outside, so this part is removed from useEffect
         const handleClickOutside = (e: MouseEvent) => {
             if (showWorkspaces && !(e.target as Element).closest('.workspace-selector')) {
                 setShowWorkspaces(false);
@@ -79,7 +76,10 @@ export default function Header({ variant = 'default', actions }: HeaderProps) {
                 {variant === 'back' ? (
                     <button
                         onClick={() => {
-                            router.push('/');
+                            const currentParams = new URLSearchParams(window.location.search);
+                            const currentDocId = currentParams.get('doc');
+                            const target = currentDocId ? `/?nav=back&focusReq=${currentDocId}` : '/?nav=back';
+                            router.push(target);
                         }}
                         className="bg-transparent border-none cursor-pointer p-2 rounded-full flex items-center justify-center text-foreground transition-colors duration-200 hover:bg-muted/10"
                         title="Back to Home"

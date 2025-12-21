@@ -5,8 +5,12 @@ import { Mark, mergeAttributes, Extension } from '@tiptap/core';
 import StarterKit from '@tiptap/starter-kit';
 import Placeholder from '@tiptap/extension-placeholder';
 import BubbleMenuExtension from '@tiptap/extension-bubble-menu';
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, forwardRef, useImperativeHandle } from 'react';
 import { useStorage } from '@/contexts/StorageContext';
+
+export interface DocumentEditorHandle {
+    removeHighlightMark: (id: string) => void;
+}
 
 interface DocumentEditorProps {
     documentId: string;
@@ -44,7 +48,7 @@ const HighlightMark = Mark.create({
         ]
     },
 
-    renderHTML({ HTMLAttributes }) {
+    renderHTML({ HTMLAttributes }: { HTMLAttributes: Record<string, any> }) {
         // @ts-ignore
         return ['span', mergeAttributes(this.options.HTMLAttributes, HTMLAttributes, { class: 'highlight-marker' }), 0]
     },
@@ -81,8 +85,8 @@ const RTLSupport = Extension.create({
                 attributes: {
                     dir: {
                         default: 'auto',
-                        parseHTML: element => element.getAttribute('dir'),
-                        renderHTML: attributes => {
+                        parseHTML: (element: HTMLElement) => element.getAttribute('dir'),
+                        renderHTML: (attributes: Record<string, any>) => {
                             return { dir: attributes.dir }
                         },
                     },
@@ -92,7 +96,7 @@ const RTLSupport = Extension.create({
     },
 });
 
-export default function DocumentEditor({ documentId, initialTitle, initialContent, onEditorReady }: DocumentEditorProps) {
+const DocumentEditor = forwardRef<DocumentEditorHandle, DocumentEditorProps>(({ documentId, initialTitle, initialContent, onEditorReady }, ref) => {
     // ... existing state ...
     const { updateDocument } = useStorage();
     const [title, setTitle] = useState(initialTitle);
@@ -125,8 +129,7 @@ export default function DocumentEditor({ documentId, initialTitle, initialConten
         content: initialContent, // Tiptap handles HTML content
         editorProps: {
             attributes: {
-                class: 'prose prose-sm sm:prose lg:prose-lg xl:prose-2xl mx-auto focus:outline-none',
-                style: 'min-height: 400px; outline: none; font-size: 1.125rem; line-height: 1.8; color: hsl(var(--foreground)); font-family: var(--font-body);',
+                class: 'prose prose-sm sm:prose lg:prose-lg xl:prose-2xl mx-auto focus:outline-none min-h-[400px] text-lg leading-relaxed text-foreground font-body outline-none',
             },
         },
         immediatelyRender: false, // Fix for SSR hydration mismatch
@@ -165,6 +168,34 @@ export default function DocumentEditor({ documentId, initialTitle, initialConten
         }
     }, [initialContent, editor]);
 
+    // Expose methods to parent via ref
+    useImperativeHandle(ref, () => ({
+        removeHighlightMark: (id: string) => {
+            if (!editor) return;
+            const { tr } = editor.state;
+            let transactionModified = false;
+
+            editor.state.doc.descendants((node, pos) => {
+                if (!node.marks || node.marks.length === 0) return true;
+
+                node.marks.forEach((mark: any) => { // Type cast for Mark if needed, or rely on inference
+                    if (mark.type.name === 'highlightMarker' &&
+                        mark.attrs.id &&
+                        mark.attrs.id === id) {
+
+                        tr.removeMark(pos, pos + node.nodeSize, mark);
+                        transactionModified = true;
+                    }
+                });
+                return true;
+            });
+
+            if (transactionModified) {
+                editor.view.dispatch(tr);
+            }
+        }
+    }));
+
     // Expose editor instance
     useEffect(() => {
         if (editor && onEditorReady) {
@@ -173,7 +204,10 @@ export default function DocumentEditor({ documentId, initialTitle, initialConten
     }, [editor, onEditorReady]);
 
     return (
-        <div className="w-full max-w-[800px] mx-auto">
+        <div
+            style={{ viewTransitionName: `document-card-${documentId}` }}
+            className="w-full max-w-[800px] mx-auto"
+        >
 
             {/* Title */}
             {/* Title */}
@@ -181,7 +215,11 @@ export default function DocumentEditor({ documentId, initialTitle, initialConten
                 type="text"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                className="text-[2.5rem] font-heading font-bold border-none outline-none bg-transparent text-foreground w-full mb-4 p-0 placeholder:text-muted/50"
+                style={{
+                    viewTransitionName: `doc-title-${documentId}`,
+                    fieldSizing: 'content'
+                } as React.CSSProperties}
+                className="text-[2.5rem] font-heading font-bold border-none outline-none bg-transparent text-foreground w-auto min-w-[300px] max-w-full mb-4 p-0 placeholder:text-muted/50"
                 placeholder="Untitled"
             />
 
@@ -265,6 +303,9 @@ export default function DocumentEditor({ documentId, initialTitle, initialConten
                     margin-top: 0.83em;
                     margin-bottom: 0.83em;
                 }
+                .ProseMirror p {
+                    margin-bottom: 1.5em; /* Increased spacing between notes/paragraphs */
+                }
                 .ProseMirror h3 {
                     font-size: 1.17em;
                     font-weight: bold;
@@ -274,4 +315,7 @@ export default function DocumentEditor({ documentId, initialTitle, initialConten
             `}</style>
         </div>
     );
-}
+});
+
+DocumentEditor.displayName = 'DocumentEditor';
+export default DocumentEditor;

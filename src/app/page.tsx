@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, Suspense, useCallback } from 'react';
+import { useState, useEffect, useRef, Suspense, useCallback, useLayoutEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useToast } from '@/contexts/ToastContext';
 import { useStorage } from '@/contexts/StorageContext';
@@ -16,6 +16,7 @@ import RightSidebar from '@/components/stitch/RightSidebar';
 import DocumentEditorView from '@/components/stitch/DocumentEditorView';
 import StitchLayout from '@/components/stitch/StitchLayout';
 import HighlightCard from '@/components/HighlightCard';
+import { useDraggableHighlights } from '@/hooks/useDraggableHighlights';
 
 // Dnd Kit Imports
 import {
@@ -53,6 +54,27 @@ function HomeContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const editingDocId = searchParams.get('doc'); // Reactive directly from URL
+  const isBackNav = searchParams.get('nav') === 'back';
+  const focusReq = searchParams.get('focusReq');
+
+  // Instant scroll to target card to ensure View Transition validity
+  useLayoutEffect(() => {
+    if (focusReq && isBackNav && scrollContainerRef.current) {
+      const element = scrollContainerRef.current.querySelector(`[data-id="${focusReq}"]`);
+      if (element) {
+        element.scrollIntoView({ behavior: 'auto', block: 'center' });
+      }
+    }
+  }, [focusReq, isBackNav, documents]);
+
+  // Clean up the URL query param so refreshes animate normally
+  useEffect(() => {
+    if (isBackNav) {
+      const url = new URL(window.location.href);
+      url.searchParams.delete('nav');
+      window.history.replaceState({}, '', url);
+    }
+  }, [isBackNav]);
 
   const [newlyCreatedDocId, setNewlyCreatedDocId] = useState<string | null>(null);
   const [activeDocId, setActiveDocId] = useState<string | null>(null);
@@ -60,20 +82,22 @@ function HomeContent() {
   const [isInstallModalOpen, setIsInstallModalOpen] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
-  // --- Drag and Drop State ---
-  const [activeDragItem, setActiveDragItem] = useState<HighlightType | null>(null);
-  const [processingDropId, setProcessingDropId] = useState<string | null>(null);
-  // Conditional drop animation (null = instant vanish, object = fly back)
-  const [dropAnimation, setDropAnimation] = useState<typeof defaultDropAnimation | null>(defaultDropAnimation);
-  const dragPreviewRef = useRef<HTMLDivElement>(null);
-
-  const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: {
-        distance: 8,
-      },
-    })
-  );
+  // --- Drag and Drop Hook ---
+  const {
+    activeDragItem,
+    processingDropId,
+    dropAnimation,
+    dragPreviewRef,
+    sensors,
+    handleDragStart,
+    handleDragEnd
+  } = useDraggableHighlights({
+    documents,
+    highlights,
+    addHighlight,
+    addDocument,
+    showToast
+  });
 
   // Set up intersection observer to track active document
   useEffect(() => {
@@ -127,10 +151,8 @@ function HomeContent() {
       await addDocument(newDoc);
       setNewlyCreatedDocId(newDoc.id);
 
-      // Scroll to the new document after a brief delay to allow rendering
-      setTimeout(() => {
-        scrollToDocument(newDoc.id);
-      }, 100);
+      // Scroll to the new document immediately (RAF handles timing)
+      scrollToDocument(newDoc.id);
 
       // Clear the auto-focus state after a short delay so subsequent updates (like drops) don't re-focus/scroll to this doc
       setTimeout(() => {
@@ -172,122 +194,7 @@ function HomeContent() {
   };
 
 
-  // --- Dnd Kit Handlers ---
-
-  const handleDragStart = (event: DragStartEvent) => {
-    const { active } = event;
-    const item = highlights.find(h => h.id === active.id);
-    if (item) {
-      setActiveDragItem(item);
-      // Reset to default (fly back) by default
-      setDropAnimation(defaultDropAnimation);
-    }
-  };
-
-  const handleDragEnd = async (event: DragEndEvent) => {
-    const { active, over } = event;
-
-    // Determine animation BEFORE closing the overlay
-    if (over) {
-      // Valid drop: Vanish instantly (no fly back)
-      setDropAnimation(null);
-    } else {
-      // Invalid drop: Fly back to original position
-      setDropAnimation(defaultDropAnimation);
-
-      // Animate rotation back to 0 smoothly during flyback
-      if (dragPreviewRef.current) {
-        dragPreviewRef.current.style.transition = 'all 300ms cubic-bezier(0.60, 0.04, 0.98, 0.34)';
-        dragPreviewRef.current.style.transform = 'rotate(0deg)';
-        dragPreviewRef.current.style.boxShadow = '0 1px 2px 0 rgb(0 0 0 / 0.05)'; // shadow-sm
-      }
-    }
-
-    // Delay clearing active item to ensure dropAnimation prop updates first
-    setTimeout(() => {
-      setActiveDragItem(null);
-    }, 0);
-
-    if (!over) return;
-
-    // Dropped on a document
-    const docId = over.id as string;
-    const highlightId = active.id as string;
-
-    const highlight = highlights.find(h => h.id === highlightId);
-    if (!highlight) return;
-
-    try {
-      const currentIds = getDocIds(highlight);
-
-      if (currentIds.includes(docId)) {
-        showToast('Already added', {
-          type: 'info',
-          description: 'This highlight is already part of this document.'
-        });
-        return;
-      }
-
-      // Optimistic UI: Hide the item immediately to prevent "flash back"
-      setProcessingDropId(highlightId);
-
-      // Append new Doc ID
-      const newIds = [...currentIds, docId];
-      const updatedHighlight = {
-        ...highlight,
-        documentIds: newIds,
-        documentId: docId // Update legacy field to point to most recent
-      };
-
-      await addHighlight(updatedHighlight); // Links metadata (Sidebar)
-
-      // Also append text to document body (Editable Content)
-      const targetDoc = documents.find(d => d.id === docId);
-
-      if (!targetDoc) {
-        console.error('Target document not found');
-        return;
-      }
-      const color = highlight.color || getCategoryStyles(highlight.url).color;
-      // Calculate duration based on text length (0.02s per char), min 0.8s, max 3s
-      const duration = Math.min(3, Math.max(0.8, highlight.text.length * 0.02));
-
-      const newContent = targetDoc.content
-        ? `${targetDoc.content}<p><span data-highlight-id="${highlight.id}" class="highlight-marker highlight-animate" style="--highlight-color: ${color}; --highlight-duration: ${duration}s">${highlight.text}</span></p>`
-        : `<p><span data-highlight-id="${highlight.id}" class="highlight-marker highlight-animate" style="--highlight-color: ${color}; --highlight-duration: ${duration}s">${highlight.text}</span></p>`;
-
-      await addDocument({
-        ...targetDoc,
-        content: newContent,
-        updatedAt: new Date().toISOString()
-      });
-
-      showToast('Added to document', {
-        type: 'success',
-        description: 'The highlight text has been appended to the document.'
-      });
-
-      // Clear optimistic state after data update + buffer
-      // We wait a bit to ensure the highlight has moved to "Assigned" list in the data prop
-      setTimeout(() => {
-        setProcessingDropId(null);
-      }, 500);
-
-      // Cleanup animation class after it plays to prevent re-triggering
-      setTimeout(async () => {
-        const cleanContent = newContent.replace(/ highlight-animate/g, '');
-        await addDocument({
-          ...targetDoc,
-          content: cleanContent,
-          updatedAt: new Date().toISOString()
-        });
-      }, duration * 1000 + 500);
-
-    } catch (error) {
-      console.error('Error moving highlight:', error);
-      setProcessingDropId(null); // Reset on error
-    }
-  };
+  // Handlers moved to useDraggableHighlights hook
 
   const handleDeleteDocument = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -329,10 +236,17 @@ function HomeContent() {
 
   const scrollToDocument = (docId: string) => {
     if (!scrollContainerRef.current) return;
-    const element = scrollContainerRef.current.querySelector(`[data-id="${docId}"]`);
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }
+
+    // Use requestAnimationFrame to ensure DOM is updated
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        if (!scrollContainerRef.current) return;
+        const element = scrollContainerRef.current.querySelector(`[data-id="${docId}"]`);
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      });
+    });
   };
 
   const handleTitleUpdate = async (id: string, newTitle: string) => {
@@ -375,7 +289,7 @@ function HomeContent() {
       <StitchLayout>
         {/* 1. Left Column: Highlight Stream */}
         <motion.div
-          initial={{ x: -30, opacity: 0 }}
+          initial={isBackNav ? false : { x: -30, opacity: 0 }}
           animate={{ x: 0, opacity: 1 }}
           transition={{
             duration: 1,
@@ -397,7 +311,7 @@ function HomeContent() {
 
         {/* 2. Center Column: Document Feed */}
         <motion.div
-          initial={{ opacity: 0, scale: 0.98 }}
+          initial={isBackNav ? false : { opacity: 0, scale: 0.98 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.5, ease: 'easeOut' }}
           className="h-screen flex-[0.8]"
@@ -411,12 +325,13 @@ function HomeContent() {
             handleDeleteDocument={handleDeleteDocument}
             handleTitleUpdate={handleTitleUpdate}
             handleCreateDocument={handleCreateDocument}
+            disableSnap={isBackNav}
           />
         </motion.div>
 
         {/* 3. Right Column: Sidebar & Navigation */}
         <motion.div
-          initial={{ x: 30, opacity: 0 }}
+          initial={isBackNav ? false : { x: 30, opacity: 0 }}
           animate={{ x: 0, opacity: 1 }}
           transition={{
             duration: 1,

@@ -5,6 +5,7 @@ import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getCategoryStyles } from '@/utils/categories';
 import { RiCheckLine } from '@remixicon/react';
+import { DocumentType } from '@/services/FileSystemService';
 
 interface HighlightProps {
     id: string;
@@ -15,7 +16,7 @@ interface HighlightProps {
     createdAt: string;
     documentId?: string | null;
     documentIds?: string[];
-    documents?: { id: string; title: string;[key: string]: any }[]; // Allow full document objects
+    documents?: DocumentType[];
     onDelete?: (id: string, e: React.MouseEvent) => void;
     onMove?: (documentId: string | null) => void;
     activeDocId?: string | null;

@@ -12,27 +12,31 @@ export const metadata: Metadata = {
   description: "Your internet highlights, organized.",
 };
 
+import { ViewTransitions } from 'next-view-transitions';
+
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <head>
+    <ViewTransitions>
+      <html lang="en" suppressHydrationWarning>
+        <head>
 
-        <meta name="theme-color" content="#ffffff" />
-      </head>
-      <body>
-        <ThemeProvider attribute="data-theme" defaultTheme="system" enableSystem>
-          <StorageProvider>
-            <ToastProvider>
+          <meta name="theme-color" content="#ffffff" />
+        </head>
+        <body>
+          <ThemeProvider attribute="data-theme" defaultTheme="system" enableSystem>
+            <StorageProvider>
+              <ToastProvider>
 
-              {children}
-            </ToastProvider>
-          </StorageProvider>
-        </ThemeProvider>
-      </body>
-    </html>
+                {children}
+              </ToastProvider>
+            </StorageProvider>
+          </ThemeProvider>
+        </body>
+      </html>
+    </ViewTransitions>
   );
 }

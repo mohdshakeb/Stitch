@@ -10,6 +10,7 @@ interface DocumentFeedProps {
     handleDeleteDocument: (id: string, e: React.MouseEvent) => void;
     handleTitleUpdate: (id: string, newTitle: string) => void;
     handleCreateDocument: () => void;
+    disableSnap?: boolean;
 }
 
 const DocumentFeed = forwardRef<HTMLDivElement, DocumentFeedProps>(({
@@ -19,7 +20,8 @@ const DocumentFeed = forwardRef<HTMLDivElement, DocumentFeedProps>(({
     newlyCreatedDocId,
     handleDeleteDocument,
     handleTitleUpdate,
-    handleCreateDocument
+    handleCreateDocument,
+    disableSnap = false
 }, ref) => {
 
     // Helper to get doc ids from highlight (duplicated safe helper)
@@ -32,12 +34,11 @@ const DocumentFeed = forwardRef<HTMLDivElement, DocumentFeedProps>(({
     return (
         <div
             ref={ref}
-            className={`document-scroll-container flex-[0.8] h-screen flex flex-col items-center gap-4 no-scrollbar ${documents.length === 0 ? 'overflow-y-hidden snap-none pt-0 pb-0 justify-center' : 'overflow-y-auto snap-y snap-mandatory pt-[calc(50vh-318px)] pb-[50vh] justify-start'}`}
+            className={`document-scroll-container flex-[0.8] h-screen flex flex-col items-center gap-4 no-scrollbar ${documents.length === 0 ? 'overflow-y-hidden snap-none pt-0 pb-0 justify-center' : `overflow-y-auto ${disableSnap ? 'snap-none' : 'snap-y snap-mandatory'} pt-[calc(50vh-318px)] pb-[50vh] justify-start`}`}
         >
             {documents.map((doc) => (
                 <DocumentPreviewCard
                     key={doc.id}
-                    // @ts-ignore
                     doc={doc}
                     highlights={highlights.filter(h => getDocIds(h).includes(doc.id))}
                     isActive={activeDocId === doc.id}

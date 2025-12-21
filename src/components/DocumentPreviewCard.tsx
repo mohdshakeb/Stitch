@@ -1,27 +1,14 @@
-import { useState, useRef, memo } from 'react';
+import { useState, useRef, memo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { RiDeleteBinLine } from '@remixicon/react';
 import { useDroppable } from '@dnd-kit/core';
-
-interface Highlight {
-    id: string;
-    text: string;
-    url: string;
-}
-
-interface Document {
-    id: string;
-    title: string;
-    content: string;
-    updatedAt: string;
-    _count?: {
-        highlights: number;
-    };
-}
+import { Link, useTransitionRouter } from 'next-view-transitions';
+import { motion } from 'framer-motion';
+import { DocumentType, HighlightType } from '@/services/FileSystemService';
 
 interface DocumentPreviewCardProps {
-    doc: Document;
-    highlights?: Highlight[];  // Highlights associated with this document
+    doc: DocumentType;
+    highlights?: HighlightType[];  // Highlights associated with this document
     isActive: boolean;
     // Removed manual drag props as Dnd-Kit handles state
     onDelete: (id: string, e: React.MouseEvent) => void;
@@ -51,7 +38,7 @@ const DocumentPreviewCard = memo(function DocumentPreviewCard({
     onTitleUpdate,
     autoFocus = false
 }: DocumentPreviewCardProps) {
-    const router = useRouter();
+    const router = useTransitionRouter();
     const [isEditing, setIsEditing] = useState(false);
     const [title, setTitle] = useState(doc.title);
     const inputRef = useRef<HTMLInputElement>(null);
@@ -62,9 +49,11 @@ const DocumentPreviewCard = memo(function DocumentPreviewCard({
     });
 
     // Auto-focus if requested
-    if (autoFocus && inputRef.current && document.activeElement !== inputRef.current) {
-        inputRef.current.focus();
-    }
+    useEffect(() => {
+        if (autoFocus && inputRef.current && document.activeElement !== inputRef.current) {
+            inputRef.current.focus({ preventScroll: true });
+        }
+    }, [autoFocus]);
 
     const handleTitleBlur = () => {
         setIsEditing(false);
@@ -86,7 +75,8 @@ const DocumentPreviewCard = memo(function DocumentPreviewCard({
             className="document-wrapper group/wrapper w-full max-w-[650px] flex flex-col items-center gap-4 px-5 opacity-100 transition-opacity duration-300 snap-center"
         >
             <div
-                onClick={(e) => {
+                style={{ viewTransitionName: `document-card-${doc.id}` }}
+                onClick={(e: React.MouseEvent) => {
                     e.preventDefault();
                     // Extension Environment: Use full URL redirection
                     const chromeAny = (window as any).chrome;
@@ -105,7 +95,7 @@ const DocumentPreviewCard = memo(function DocumentPreviewCard({
                         router.push(`/?doc=${doc.id}`);
                     }
                 }}
-                className={`document-paper group relative flex flex-col w-[450px] max-w-full aspect-[1/1.414] bg-surface rounded-sm p-10 cursor-pointer transition-all duration-300 overflow-hidden hover:-translate-y-0.5 ${isActive ? 'scale-100 shadow-[0_20px_25px_-5px_rgba(0,0,0,0.05),0_8px_10px_-6px_rgba(0,0,0,0.01)]' : 'scale-95'} ${isOver ? 'border-2 border-primary shadow-[0_0_0_4px_hsl(var(--primary)/0.2),_var(--shadow-xl)] scale-[1.02] rotate-1' : 'border-none'}`}
+                className={`document-paper group relative flex flex-col w-[450px] max-w-full aspect-[1/1.414] bg-surface rounded-sm p-10 cursor-pointer transition-all duration-300 overflow-hidden hover:-translate-y-0.5 will-change-transform ${isActive ? 'scale-100 shadow-[0_20px_25px_-5px_rgba(0,0,0,0.05),0_8px_10px_-6px_rgba(0,0,0,0.01)]' : 'scale-95'} ${isOver ? 'border-2 border-primary shadow-[0_0_0_4px_hsl(var(--primary)/0.2),_var(--shadow-xl)] scale-[1.02] rotate-1' : 'border-none'}`}
             >
                 {/* Title Row */}
                 <div
@@ -120,7 +110,11 @@ const DocumentPreviewCard = memo(function DocumentPreviewCard({
                             onChange={(e) => setTitle(e.target.value)}
                             onBlur={handleTitleBlur}
                             onKeyDown={handleKeyDown}
-                            className="text-2xl font-heading font-semibold text-foreground border-none bg-transparent w-full outline-none cursor-text pr-6 placeholder:text-muted/50"
+                            style={{
+                                viewTransitionName: `doc-title-${doc.id}`,
+                                fieldSizing: 'content'
+                            } as React.CSSProperties}
+                            className="text-2xl font-heading font-bold text-foreground border-none bg-transparent w-auto min-w-[150px] max-w-full outline-none cursor-text pr-6 placeholder:text-muted/50"
                             placeholder="Untitled Document"
                         />
                     </div>

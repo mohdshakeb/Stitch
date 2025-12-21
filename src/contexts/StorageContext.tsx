@@ -276,43 +276,8 @@ export function StorageProvider({ children }: { children: React.ReactNode }) {
             const updated = { ...doc, ...updates, updatedAt: new Date().toISOString() };
             await fileSystemService.saveDocument(updated);
 
-            // Sync Logic: Check for deleted highlights
-            if (typeof updates.content === 'string') {
-                // ... content sync logic (KEEP SAME) ...
-                const content = updates.content;
-                const presentHighlightIds = new Set<string>();
-                const regex = /data-highlight-id="([^"]+)"/g;
-                let match;
-                while ((match = regex.exec(content)) !== null) {
-                    presentHighlightIds.add(match[1]);
-                }
-
-                const allHighlights = await fileSystemService.getHighlights();
-                const assignedHighlights = allHighlights.filter(h =>
-                    (h.documentIds && h.documentIds.includes(id)) || h.documentId === id
-                );
-
-                const highlightsToUpdate: HighlightType[] = [];
-
-                for (const h of assignedHighlights) {
-                    if (!presentHighlightIds.has(h.id)) {
-                        let newDocIds = (h.documentIds || []).filter(dId => dId !== id);
-                        const newLegacyId = newDocIds.length > 0 ? newDocIds[newDocIds.length - 1] : null;
-
-                        highlightsToUpdate.push({
-                            ...h,
-                            documentIds: newDocIds,
-                            documentId: newLegacyId
-                        });
-                    }
-                }
-
-                if (highlightsToUpdate.length > 0) {
-                    for (const h of highlightsToUpdate) {
-                        await fileSystemService.saveHighlight(h);
-                    }
-                }
-            }
+            // Sync Logic: Check for deleted highlights - DISABLED for "Citation Manager" model
+            // Highlights are only removed via explicit "Unlink" action in the panel.
             await refreshData();
         }
     };

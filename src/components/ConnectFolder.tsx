@@ -87,12 +87,32 @@ const MOCK_STICKIES = [
     }
 ];
 
+const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+        opacity: 1,
+        transition: {
+            staggerChildren: 0.15,
+            delayChildren: 0.2
+        }
+    }
+};
+
+const itemVariants = {
+    hidden: { y: 20, opacity: 0 },
+    visible: {
+        y: 0,
+        opacity: 1,
+        transition: { type: "spring", stiffness: 100, damping: 20 }
+    }
+};
+
 export default function ConnectFolder() {
     const { connect, connectInternal, isConnecting } = useStorage();
     const { resolvedTheme } = useTheme();
     const [isSupported, setIsSupported] = useState(true);
     const [mounted, setMounted] = useState(false);
-    const [positions, setPositions] = useState<{ x: number; y: number; rotate: number }[]>([]);
+    const [positions, setPositions] = useState<{ x: number; y: number; rotate: number; delay: number }[]>([]);
 
     // Z-Index State Management
     // Start at 40 to ensure they are above the center content (z-30)
@@ -136,7 +156,7 @@ export default function ConnectFolder() {
         const minRadius = minDimension * 0.42;
         const maxRadius = minDimension * 0.85;
 
-        const generatedPositions: { x: number; y: number; rotate: number }[] = [];
+        const generatedPositions: { x: number; y: number; rotate: number; delay: number }[] = [];
 
         for (let i = 0; i < MOCK_STICKIES.length; i++) {
             let targetAngleDeg;
@@ -178,7 +198,10 @@ export default function ConnectFolder() {
             const magnitude = Math.random() * 10 + 5; // 5 to 15 degrees
             const rotate = sign * magnitude;
 
-            generatedPositions.push({ x, y, rotate });
+            // Random delay between 0.5s and 1.5s
+            const delay = 0.5 + Math.random();
+
+            generatedPositions.push({ x, y, rotate, delay });
         }
 
         setPositions(generatedPositions);
@@ -200,15 +223,21 @@ export default function ConnectFolder() {
                     zIndex={zIndices[index]}
                     onDragStart={() => handleDragStart(index)}
                     topZIndex={topZIndex}
+                    delay={pos.delay}
                 />
             ))}
 
             {/* 2. Center Content Layer */}
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-30">
-                <div className="pointer-events-auto flex flex-col items-center justify-center gap-2 p-4 text-center max-w-[600px]">
+                <motion.div
+                    initial="hidden"
+                    animate="visible"
+                    variants={containerVariants}
+                    className="pointer-events-auto flex flex-col items-center justify-center gap-2 p-4 text-center max-w-[600px]"
+                >
 
                     {/* Logo - Reduced Size */}
-                    <div className="relative w-[200px] h-[48px] mb-1">
+                    <motion.div variants={itemVariants} className="relative w-[200px] h-[48px] mb-1">
                         <Image
                             src={resolvedTheme === 'dark' ? "/logo-dark.png" : "/logo.png"}
                             alt="Logo"
@@ -216,30 +245,30 @@ export default function ConnectFolder() {
                             className="object-contain"
                             priority
                         />
-                    </div>
+                    </motion.div>
 
-                    <div className="flex flex-col items-center gap-4">
-                        <p className="text-lg text-muted font-medium leading-relaxed max-w-[450px]">
+                    <motion.div variants={itemVariants} className="flex flex-col items-center gap-4">
+                        <p className="text-xl text-muted font-regular leading-relaxed max-w-[450px]">
                             Where Writing stops being a blank-page battle. It becomes an act of assembly.
                         </p>
-                    </div>
+                    </motion.div>
 
                     {/* Action */}
-                    <div className="flex flex-col items-center gap-6 w-full mt-20">
+                    <motion.div variants={itemVariants} className="flex flex-col items-center gap-6 w-full mt-20">
                         <div className="flex flex-col items-center gap-4 group cursor-pointer">
                             <FolderConnectIcon onClick={connect} isConnecting={isConnecting} />
 
-                            <span className="text-foreground font-medium text-sm tracking-wide opacity-80 group-hover:opacity-100 transition-opacity">
-                                {isConnecting ? 'Opening Folder...' : 'Create or Open Your Workspace'}
+                            <span className="text-foreground font-semibold text-md tracking-wide opacity-80 group-hover:opacity-100 transition-opacity">
+                                {isConnecting ? 'Opening Folder...' : 'OPEN WORKSPACE'}
                             </span>
                         </div>
 
                         {isSupported && (
                             <button
                                 onClick={connectInternal}
-                                className="bg-transparent border-none text-muted text-xs cursor-pointer underline hover:text-foreground transition-colors opacity-60 hover:opacity-100"
+                                className="bg-transparent border-none text-muted text-md cursor-pointer hover:text-foreground transition-colors opacity-60 hover:opacity-100"
                             >
-                                Use Browser Storage (Demo)
+                                Demo with Browser Storage
                             </button>
                         )}
 
@@ -251,8 +280,8 @@ export default function ConnectFolder() {
                                 </button>
                             </p>
                         )}
-                    </div>
-                </div>
+                    </motion.div>
+                </motion.div>
             </div>
         </div>
     );

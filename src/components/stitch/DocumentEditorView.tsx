@@ -2,9 +2,10 @@ import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useReactToPrint } from 'react-to-print';
 import { useToast } from '@/contexts/ToastContext';
-import DocumentEditor from '@/components/DocumentEditor';
+import { useStorage } from '@/contexts/StorageContext';
+import DocumentEditor, { DocumentEditorHandle } from '@/components/DocumentEditor';
 import Header from '@/components/Header';
-import SourcesSidebar from '@/components/SourcesSidebar';
+import CitationPanel from '@/components/stitch/CitationPanel';
 import { DocumentType, HighlightType } from '@/services/FileSystemService';
 import { Editor } from '@tiptap/react';
 import { RiFilePdfLine, RiFileCopyLine } from '@remixicon/react';
@@ -24,8 +25,73 @@ export default function DocumentEditorView({
 }: DocumentEditorViewProps) {
     const router = useRouter();
     const { showToast } = useToast();
+    const { addHighlight } = useStorage();
     const [editor, setEditor] = useState<Editor | null>(null);
+    const editorRef = useRef<DocumentEditorHandle>(null);
     const contentRef = useRef<HTMLDivElement>(null);
+
+    const handleRetrieve = (text: string) => {
+        if (editor) {
+            // Insert text at current selection
+            // We can wrap it in a highlight mark if we want to restore "highlight" status in the editor,
+            // but the user said "retrieved notes are just text".
+            // However, sticking to the philosophy "Citation Manager", maybe just text is best.
+            // "Everything added notes... are all just text".
+            editor.chain().focus().insertContent(text).run();
+            showToast('Note inserted', { type: 'success', duration: 1500 });
+        }
+    };
+
+    const handleUnlink = async (url: string) => {
+        if (!editingDoc) return;
+
+        // Find all highlights in this doc that match the URL
+        const highlightsToUnlink = docHighlights.filter(h => h.url === url);
+
+        if (highlightsToUnlink.length === 0) return;
+
+        let successCount = 0;
+        for (const h of highlightsToUnlink) {
+            // Remove current doc ID from documentIds
+            const currentDocIds = h.documentIds || [];
+            const newDocIds = currentDocIds.filter(id => id !== editingDocId);
+
+            // Legacy check (if documentId is essentially just the last item of newDocIds)
+            const newLegacyId = newDocIds.length > 0 ? newDocIds[newDocIds.length - 1] : undefined;
+
+            await addHighlight({
+                ...h,
+                documentIds: newDocIds,
+                documentId: newLegacyId
+            });
+            successCount++;
+        }
+
+        // Editor logic update in handleUnlink
+        // Clean up the editor visual state: Remove the highlights from the text
+        if (editorRef.current && successCount > 0) {
+            const unlinkedIds = highlightsToUnlink.map(h => h.id);
+            unlinkedIds.forEach(id => {
+                editorRef.current?.removeHighlightMark(id);
+            });
+        }
+
+        // Usage in JSX
+        <DocumentEditor
+            ref={editorRef}
+            documentId={editingDoc.id}
+            initialTitle={editingDoc.title}
+            initialContent={editingDoc.content || ''}
+            onEditorReady={setEditor}
+        />
+
+        if (successCount > 0) {
+            showToast('Unlinked from document', {
+                type: 'success',
+                description: `Removed citation and ${successCount} notes.`
+            });
+        }
+    };
 
     // Light-weight PDF export using native browser print
     const handlePrint = useReactToPrint({
@@ -89,7 +155,7 @@ export default function DocumentEditorView({
 
     if (editingDoc) {
         return (
-            <div className="flex min-h-screen bg-background gap-6 pt-20 px-4 pb-8 justify-center items-start min-w-[1200px]">
+            <div className="flex flex-col xl:flex-row items-center xl:items-stretch justify-center min-h-screen bg-surface gap-6 pt-20 px-4 pb-8 transition-colors duration-300">
                 <Header
                     variant="back"
                     actions={
@@ -111,11 +177,14 @@ export default function DocumentEditorView({
                         </div>
                     }
                 />
+
+                {/* Main Editor Area */}
                 <div
                     ref={contentRef}
-                    className="flex-auto max-w-[800px] min-w-[320px] w-full flex flex-col"
+                    className="w-full max-w-[680px] flex flex-col"
                 >
                     <DocumentEditor
+                        ref={editorRef}
                         documentId={editingDoc.id}
                         initialTitle={editingDoc.title}
                         initialContent={editingDoc.content || ''}
@@ -123,16 +192,14 @@ export default function DocumentEditorView({
                     />
                 </div>
 
-                {docHighlights.length > 0 && (
-                    <div className="flex-[0_1_280px] min-w-[220px] sticky top-20 max-h-[calc(100vh-100px)] overflow-y-auto no-scrollbar">
-                        <SourcesSidebar highlights={docHighlights.map(h => ({
-                            ...h,
-                            title: h.title || null,
-                            favicon: h.favicon || null,
-                            documentId: h.documentId || null
-                        }))} />
-                    </div>
-                )}
+                {/* Right Citation Panel */}
+                <div className="w-full max-w-[680px] xl:max-w-none xl:w-auto flex justify-start items-start pt-10 xl:pt-24 xl:pl-0">
+                    {docHighlights.length > 0 && (
+                        <div className="sticky top-24 w-full xl:w-[300px]">
+                            <CitationPanel highlights={docHighlights} onUnlink={handleUnlink} onRetrieve={handleRetrieve} />
+                        </div>
+                    )}
+                </div>
             </div>
         );
     }
