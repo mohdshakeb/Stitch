@@ -25,7 +25,7 @@ interface DraggableStickyItemProps {
     zIndex: number;
     onDragStart: () => void;
     topZIndex: number;
-    delay?: number;
+    scale?: number;
 }
 
 export default function DraggableStickyItem({
@@ -36,7 +36,8 @@ export default function DraggableStickyItem({
     zIndex,
     onDragStart,
     topZIndex,
-    delay = 0
+    delay = 0,
+    scale = 1
 }: DraggableStickyItemProps) {
     const [isDragging, setIsDragging] = useState(false);
     const [hasAppeared, setHasAppeared] = useState(false);
@@ -94,16 +95,16 @@ export default function DraggableStickyItem({
                 touchAction: 'none',
                 transformOrigin: 'top center' // Pivot physics from the top (glue area)
             }}
-            initial={{ opacity: 0, scale: 1.15 }}
+            initial={{ opacity: 0, scale: 1.15 * scale }}
             animate={{
                 opacity: 1,
                 zIndex: isDragging ? topZIndex + 100 : zIndex,
-                scale: isDragging ? 1.05 : 1 // Reduced scale slightly for snappier feel
+                scale: isDragging ? 1.05 * scale : scale
             }}
-            whileHover={{ scale: isDragging ? 1.05 : 1.02, cursor: 'grab' }}
+            whileHover={{ scale: isDragging ? 1.05 * scale : 1.02 * scale, cursor: 'grab' }}
             whileDrag={{ cursor: 'grabbing' }}
             transition={hasAppeared ? { duration: 0.15 } : { delay, type: "spring", damping: 20, stiffness: 300 }}
-            className="absolute w-[180px] h-[180px]"
+            className="absolute top-0 left-0 w-[180px] h-[180px]"
         >
             <div className="pointer-events-none w-full h-full">
                 <StickyNote

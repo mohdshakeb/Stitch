@@ -14,6 +14,8 @@ export const metadata: Metadata = {
 
 import { ViewTransitions } from 'next-view-transitions';
 
+import MobileRestricted from "@/components/MobileRestricted";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -30,7 +32,7 @@ export default function RootLayout({
           <ThemeProvider attribute="data-theme" defaultTheme="system" enableSystem>
             <StorageProvider>
               <ToastProvider>
-
+                <MobileRestricted />
                 {children}
               </ToastProvider>
             </StorageProvider>

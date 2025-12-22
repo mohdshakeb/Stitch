@@ -93,6 +93,7 @@ export default function Header({ variant = 'default', actions }: HeaderProps) {
                         width={120}
                         height={40}
                         className="object-contain object-left h-10 w-auto"
+                        style={{ width: 'auto', height: 'auto' }}
                         priority
                     />
                 )}
