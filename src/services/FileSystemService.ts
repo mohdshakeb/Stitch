@@ -63,17 +63,17 @@ interface HighlightDB extends DBSchema {
 const SEED_HIGHLIGHTS: HighlightType[] = [
     {
         id: 'seed-1',
-        text: '👋 Welcome to Highlight! I\'m a sticky note. You can drag me around.',
+        text: 'I already belong somewhere — but I can be at two places at once.',
         url: 'https://example.com/welcome', // social domain logic fallback
-        title: 'Welcome Guide',
-        favicon: 'https://www.google.com/s2/favicons?domain=example.com',
+        title: 'Organization Tip',
+        favicon: 'https://www.google.com/s2/favicons?domain=notion.so',
         createdAt: new Date().toISOString(),
         tags: [],
         color: 'var(--cat-social-bg)', // Yellow (Social)
     },
     {
         id: 'seed-2',
-        text: '🔗 I was clipped from the web. Click my link icon to go back to the source.',
+        text: 'I came from the web. Reshape me to make the idea take form.',
         url: 'https://example.com/source',
         title: 'Source Example',
         favicon: 'https://www.google.com/s2/favicons?domain=wikipedia.org',
@@ -83,10 +83,10 @@ const SEED_HIGHLIGHTS: HighlightType[] = [
     },
     {
         id: 'seed-3',
-        text: '📂 Drag me onto a Document to organize me!',
+        text: '👋 Welcome to Stitch. I’m a sticky note — drag me into a document.',
         url: 'https://example.com/organize',
-        title: 'Organization Tip',
-        favicon: 'https://www.google.com/s2/favicons?domain=notion.so',
+        title: 'Welcome Guide',
+        favicon: 'https://www.google.com/s2/favicons?domain=example.com',
         createdAt: new Date().toISOString(),
         tags: [],
         color: 'var(--cat-article-bg)', // Green (Article)
@@ -100,7 +100,7 @@ const SEED_DOCUMENTS: DocumentType[] = [
         url: '',
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
-        content: '<p><span data-highlight-id="seed-1" class="highlight-marker" style="--highlight-color: var(--cat-social-bg)">👋 Welcome to Highlight! I\'m a sticky note. You can drag me around.</span></p><p><span data-highlight-id="seed-2" class="highlight-marker" style="--highlight-color: var(--cat-ai-bg)">🔗 I was clipped from the web. Click my link icon to go back to the source.</span></p>'
+        content: ''
     },
     {
         id: 'doc-2',
@@ -108,7 +108,7 @@ const SEED_DOCUMENTS: DocumentType[] = [
         url: '',
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
-        content: ''
+        content: '<p><span data-highlight-id="seed-1" class="highlight-marker" style="--highlight-color: var(--cat-social-bg)">I already belong somewhere — but I can be at two places at once.</span></p><p><span data-highlight-id="seed-2" class="highlight-marker" style="--highlight-color: var(--cat-ai-bg)">I came from the web. Reshape me to make the idea take form.</span></p>'
     }
 ];
 
@@ -348,7 +348,7 @@ export class FileSystemService {
                 // Default Seed logic
                 const seededHighlights = SEED_HIGHLIGHTS.map(h => ({
                     ...h,
-                    documentId: h.id === 'seed-3' ? null : 'doc-1'
+                    documentId: h.id === 'seed-3' ? null : 'doc-2'
                 }));
                 await this.writeJsonFile(HIGHLIGHTS_FILE, seededHighlights);
             } else {

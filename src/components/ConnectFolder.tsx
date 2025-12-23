@@ -23,7 +23,7 @@ const CATEGORY_THEME = {
 const MOCK_STICKIES = [
     {
         id: 'mock-1',
-        text: "A place where ideas come together. Gently, naturally, piece by piece.",
+        text: "Collect now. Decide later.",
         url: "",
         createdAt: new Date().toISOString(),
         title: "",
@@ -31,7 +31,7 @@ const MOCK_STICKIES = [
     },
     {
         id: 'mock-2',
-        text: "Stitch meaning out of what already moved you.",
+        text: "This feels important. Future me will know.",
         url: "",
         createdAt: new Date().toISOString(),
         title: "",
@@ -39,7 +39,7 @@ const MOCK_STICKIES = [
     },
     {
         id: 'mock-3',
-        text: "Stitch isn’t about capturing everything. It’s about connecting the right things.",
+        text: "خیالات تب پروان چڑھتے ہیں جب آپ انہیں ایک دوسرے کے ساتھ رکھتے ہیں۔",
         url: "",
         createdAt: new Date().toISOString(),
         title: "",
@@ -55,7 +55,7 @@ const MOCK_STICKIES = [
     },
     {
         id: 'mock-5',
-        text: "Stitch is the gathering place where your scattered fragments finally meet.",
+        text: "Writing is where thinking actually happens.",
         url: "",
         createdAt: new Date().toISOString(),
         title: "",
@@ -63,7 +63,7 @@ const MOCK_STICKIES = [
     },
     {
         id: 'mock-6',
-        text: "This isn’t about capturing everything. It’s about capturing the right things.",
+        text: "It’s about connecting the right things.",
         url: "",
         createdAt: new Date().toISOString(),
         title: "",
@@ -71,7 +71,7 @@ const MOCK_STICKIES = [
     },
     {
         id: 'mock-7',
-        text: "Connect your thoughts thoughtfully, intuitively, and at your own pace.",
+        text: "टुकड़ों से शुरू करें। स्पष्टता बाद में आती है।",
         url: "",
         createdAt: new Date().toISOString(),
         title: "",
@@ -79,7 +79,7 @@ const MOCK_STICKIES = [
     },
     {
         id: 'mock-8',
-        text: "Ideas behave differently here. Here, they learn to belong to each other.",
+        text: "Nothing meaningful is created in isolation.",
         url: "",
         createdAt: new Date().toISOString(),
         title: "",
@@ -249,24 +249,27 @@ export default function ConnectFolder() {
 
                     <motion.div variants={itemVariants} className="flex flex-col items-center gap-4">
                         <p className="text-xl text-muted font-regular leading-relaxed max-w-[450px]">
-                            Where Writing stops being a blank-page battle. It becomes an act of assembly.
+                            Where writing stops being a blank-page battle and becomes an act of assembly.
                         </p>
                     </motion.div>
 
                     {/* Action */}
-                    <motion.div variants={itemVariants} className="flex flex-col items-center gap-6 w-full mt-20">
-                        <div className="flex flex-col items-center gap-4 group cursor-pointer">
+                    <motion.div variants={itemVariants} className="flex flex-col items-center gap-12 w-full mt-20">
+                        <div className="flex flex-col items-center gap-2 group cursor-pointer">
                             <FolderConnectIcon onClick={connect} isConnecting={isConnecting} />
 
                             <span className="text-foreground font-semibold text-md tracking-wide opacity-80 group-hover:opacity-100 transition-opacity">
                                 {isConnecting ? 'Opening Folder...' : 'OPEN WORKSPACE'}
                             </span>
+                            <p className="text-sm text-muted font-regular leading-relaxed max-w-[250px]">
+                                Create a folder on your computer to connect to your workspace.
+                            </p>
                         </div>
 
                         {isSupported && (
                             <button
                                 onClick={connectInternal}
-                                className="bg-transparent border-none text-muted text-md cursor-pointer hover:text-foreground transition-colors opacity-60 hover:opacity-100"
+                                className="bg-transparent border-none text-muted text-md cursor-pointer hover:text-foreground transition-colors opacity-80 hover:opacity-100"
                             >
                                 Demo with Browser Storage
                             </button>

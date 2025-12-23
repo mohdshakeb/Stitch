@@ -37,6 +37,7 @@
   /* Let's try a slightly deeper, rich green: #059669 -> 160 84% 39% */
   --primary: 160 40% 27%;
   --primary-foreground: 0 0% 100%;
+  --primary-light: 160 40% 65%;
   /* White text always works on this green */
 
   /* Accent: Pale Teal (#C7E9DE) */
@@ -212,10 +213,11 @@ a {
     /* Firefox */
   }
 
-  .font-urdu {
+  .font-urdu,
+  [dir="rtl"] {
     font-family: var(--font-urdu);
-    line-height: 1.8;
-    /* Urdu often needs taller lines */
+    line-height: 1.5;
+    /* Reduced line height for tighter fit */
   }
 }
 

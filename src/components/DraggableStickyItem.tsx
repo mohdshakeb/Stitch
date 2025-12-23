@@ -26,6 +26,7 @@ interface DraggableStickyItemProps {
     onDragStart: () => void;
     topZIndex: number;
     scale?: number;
+    delay?: number;
 }
 
 export default function DraggableStickyItem({

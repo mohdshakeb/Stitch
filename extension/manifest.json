@@ -1,14 +1,13 @@
 {
   "manifest_version": 3,
-  "name": "Highlight",
+  "name": "Stitch",
   "version": "1.0",
-  "description": "Save text highlights from any webpage.",
+  "description": "Save text snippets from any webpage.",
   "permissions": [
     "contextMenus",
     "activeTab",
     "scripting",
-    "storage",
-    "alarms"
+    "storage"
   ],
   "background": {
     "service_worker": "background.js"
@@ -23,11 +22,14 @@
       ]
     }
   ],
-  "action": {},
+  "action": {
+    "default_icon": "icon-48.png",
+    "default_title": "Stitch"
+  },
   "icons": {
-    "16": "icon.svg",
-    "48": "icon.svg",
-    "128": "icon.svg"
+    "16": "icon-16.png",
+    "48": "icon-48.png",
+    "128": "icon-128.png"
   },
   "web_accessible_resources": [
     {
@@ -43,10 +45,10 @@
     "matches": [
       "http://localhost:3000/*",
       "http://127.0.0.1:3000/*",
-      "https://stitch-y7wp.vercel.app/*"
+      "https://stitch.mostlyuseful.in/*"
     ]
   },
   "content_security_policy": {
-    "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'"
+    "extension_pages": "script-src 'self'; object-src 'self'"
   }
 }

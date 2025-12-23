@@ -11,6 +11,7 @@ interface StickyNoteProps {
     color?: string | null;
     textColor?: string | null;
     className?: string; // Allow tailwind classes
+    contentClassName?: string;
 }
 
 // SVG Noise Pattern for Paper Texture
@@ -25,12 +26,16 @@ export default function StickyNote({
     createdAt,
     color,
     textColor,
-    className = ''
+    className = '',
+    contentClassName = ''
 }: StickyNoteProps) {
 
     const styles = getCategoryStyles(url);
     const bg = color || styles.color;
     const txtColor = textColor || styles.textColor;
+
+    // Automatic detection for Urdu/Arabic script
+    const isUrdu = /[\u0600-\u06FF\u0750-\u077F]/.test(text);
 
     return (
         <div
@@ -46,9 +51,12 @@ export default function StickyNote({
 
             {/* Paper Thickness Effect (Rim Light) */}
             <div className="absolute inset-0 pointer-events-none rounded-sm shadow-[inset_0_1px_0_0_rgba(255,255,255,0.4)] dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08)]" />
-            <div className="relative z-10 p-6 flex flex-col h-full justify-between overflow-hidden">
+            <div className={`relative z-10 flex flex-col h-full justify-between overflow-hidden ${isUrdu ? 'p-5' : 'p-6'}`}>
                 <blockquote
-                    className="text-sm leading-relaxed font-heading m-0 mb-4 border-none p-0 line-clamp-6 text-ellipsis"
+                    dir={isUrdu ? "rtl" : "ltr"}
+                    className={`leading-relaxed m-0 mb-4 border-none p-0 line-clamp-6 text-ellipsis 
+                    ${isUrdu ? 'font-urdu text-xl text-right' : 'text-sm font-heading'} 
+                    ${contentClassName}`}
                     style={{ color: txtColor }}
                 >
                     {text}

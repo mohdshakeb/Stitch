@@ -95,7 +95,7 @@ const DocumentPreviewCard = memo(function DocumentPreviewCard({
                         router.push(`/?doc=${doc.id}`);
                     }
                 }}
-                className={`document-paper group relative flex flex-col w-[450px] max-w-full aspect-[1/1.414] bg-surface rounded-sm p-10 cursor-pointer transition-all duration-300 overflow-hidden hover:-translate-y-0.5 will-change-transform ${isActive ? 'scale-100 shadow-[0_20px_25px_-5px_rgba(0,0,0,0.05),0_8px_10px_-6px_rgba(0,0,0,0.01)]' : 'scale-95'} ${isOver ? 'border-2 border-primary shadow-[0_0_0_4px_hsl(var(--primary)/0.2),_var(--shadow-xl)] scale-[1.02] rotate-1' : 'border-none'}`}
+                className={`document-paper group relative flex flex-col w-[450px] max-w-full aspect-[1/1.414] bg-surface rounded-sm p-10 cursor-pointer transition-all duration-300 overflow-hidden hover:-translate-y-0.5 will-change-transform ${isActive ? 'scale-100 shadow-[0_20px_25px_-5px_rgba(0,0,0,0.05),0_8px_10px_-6px_rgba(0,0,0,0.01)]' : 'scale-95'} ${isOver ? 'border-2 border-primary-light shadow-[0_0_0_4px_hsl(var(--primary-light)/0.2),_var(--shadow-xl)] scale-[1.02] rotate-1' : 'border-none'}`}
             >
                 {/* Title Row */}
                 <div
@@ -129,7 +129,7 @@ const DocumentPreviewCard = memo(function DocumentPreviewCard({
                 </div>
 
                 <div className="text-sm text-muted leading-relaxed whitespace-pre-wrap overflow-hidden flex-1 [mask-image:linear-gradient(to_bottom,black_90%,transparent_100%)]">
-                    <DocumentContentPreview html={doc.content} />
+                    <DocumentContentPreview html={doc.content || ''} />
                 </div>
 
                 <div className="text-xs text-muted mt-auto pt-4 shrink-0">

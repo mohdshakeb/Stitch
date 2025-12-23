@@ -19,6 +19,7 @@ const config: Config = {
                     DEFAULT: "hsl(var(--primary) / <alpha-value>)",
                     foreground: "hsl(var(--primary-foreground) / <alpha-value>)",
                 },
+                "primary-light": "hsl(var(--primary-light) / <alpha-value>)",
                 accent: "hsl(var(--accent) / <alpha-value>)",
             },
         },

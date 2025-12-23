@@ -60,10 +60,10 @@ export default function RightSidebar({
 
             {/* 2. Welcome State - Shown when Connected AND No Filters */}
             {isExtensionAvailable && !(highlights.length > 0 && Array.from(new Set(highlights.map(h => getCategoryFromUrl(h.url)))).filter(c => c !== 'other').length > 1) && (
-                <div className="flex flex-col gap-4 opacity-80 mt-0 w-full">
-                    <h3 className="text-xl font-semibold">Welcome to Highlight</h3>
-                    <p className="text-sm text-muted leading-relaxed">
-                        Your personal knowledge base. Collect highlights from the web, organize them into documents, and keep your thoughts in sync.
+                <div className="flex flex-col gap-2 opacity-80 mt-0 w-full">
+                    <h3 className="text-xl font-semibold">A place for your fragments</h3>
+                    <p className="text-md text-muted leading-relaxed">
+                        Stitch is a place where ideas come together — gently, naturally, piece by piece. Most of what we read leaves behind small traces: a line that resonates, a paragraph that sparks a thought, an excerpt that could lead somewhere. It’s where your ideas learn to belong to each other.
                     </p>
                 </div>
             )}
