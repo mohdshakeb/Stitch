@@ -1,4 +1,6 @@
 // content.js
+// Idempotency check removed to ensure listeners are re-attached after extension reloads.
+// The showSaveModal function handles UI cleanup (removing existing modals), so duplicate execution is safe.
 
 // Handshake Protocol for Web App (Auto-Discovery)
 const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';

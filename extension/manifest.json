@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Stitch",
-  "version": "1.0",
+  "version": "1.2",
   "description": "Save text snippets from any webpage.",
   "permissions": [
     "contextMenus",
@@ -15,11 +15,12 @@
   "content_scripts": [
     {
       "matches": [
-        "<all_urls>"
+        "https://stitch.mostlyuseful.in/*"
       ],
       "js": [
         "content.js"
-      ]
+      ],
+      "run_at": "document_start"
     }
   ],
   "action": {
@@ -43,8 +44,6 @@
   ],
   "externally_connectable": {
     "matches": [
-      "http://localhost:3000/*",
-      "http://127.0.0.1:3000/*",
       "https://stitch.mostlyuseful.in/*"
     ]
   },

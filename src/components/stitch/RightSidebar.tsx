@@ -1,7 +1,7 @@
 import React from 'react';
 import { DocumentType, HighlightType } from '@/services/FileSystemService';
 import { Category, CATEGORY_CONFIG, getCategoryFromUrl } from '@/utils/categories';
-import { RiDownload2Line } from '@remixicon/react';
+import { RiArrowRightLine } from '@remixicon/react';
 
 interface RightSidebarProps {
     documents: DocumentType[];
@@ -9,7 +9,6 @@ interface RightSidebarProps {
     activeDocId: string | null;
     scrollToDocument: (id: string) => void;
     isExtensionAvailable: boolean;
-    setIsInstallModalOpen: (isOpen: boolean) => void;
     selectedCategory: Category | null;
     setSelectedCategory: (category: Category | null) => void;
     handleCreateDocument: () => void;
@@ -21,7 +20,6 @@ export default function RightSidebar({
     activeDocId,
     scrollToDocument,
     isExtensionAvailable,
-    setIsInstallModalOpen,
     selectedCategory,
     setSelectedCategory,
     handleCreateDocument
@@ -33,27 +31,23 @@ export default function RightSidebar({
             {!isExtensionAvailable && (
                 <div className="flex flex-col gap-4 mt-0 w-full">
                     <div>
-                        <h3 className="text-xl font-semibold mb-2">Welcome to Highlight</h3>
+                        <h3 className="text-xl font-semibold mb-2">Welcome to Stitch</h3>
                         <p className="text-sm text-muted leading-relaxed">
-                            To start collecting highlights from the web, you'll need our helper extension.
+                            To start collecting snippets from across the web, get Stitch extension.
                         </p>
                     </div>
 
                     <div className="flex flex-col gap-3 items-start w-full">
-                        <button
-                            onClick={() => setIsInstallModalOpen(true)}
-                            className="bg-transparent border-none text-foreground text-sm underline underline-offset-4 cursor-pointer p-0 hover:text-foreground/80"
+                        <a
+                            href="https://chromewebstore.google.com/detail/stitch/lhfmohhblbgoblncbhfblimndflcooba"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="px-4 py-2 bg-muted/5 text-foreground border border-border rounded-md text-sm font-medium cursor-pointer flex items-center justify-center gap-2 transition-all duration-200 w-full hover:bg-muted/10 hover:border-muted/5 no-underline"
                         >
-                            See How
-                        </button>
-
-                        <button
-                            onClick={() => setIsInstallModalOpen(true)}
-                            className="px-4 py-2.5 bg-muted/10 text-foreground border border-border rounded-md text-sm font-medium cursor-pointer flex items-center justify-center gap-2 transition-all duration-200 w-full hover:bg-muted/15 hover:border-foreground"
-                        >
-                            <RiDownload2Line />
-                            Download Extension
-                        </button>
+                            <img src="/chromestorelogo.svg" alt="Chrome Web Store" className="w-5 h-5" />
+                            Add from Chrome Store
+                            <RiArrowRightLine size={16} className="opacity-70" />
+                        </a>
                     </div>
                 </div>
             )}
@@ -63,7 +57,7 @@ export default function RightSidebar({
                 <div className="flex flex-col gap-2 opacity-80 mt-0 w-full">
                     <h3 className="text-xl font-semibold">A place for your fragments</h3>
                     <p className="text-md text-muted leading-relaxed">
-                        Stitch is a place where ideas come together — gently, naturally, piece by piece. Most of what we read leaves behind small traces: a line that resonates, a paragraph that sparks a thought, an excerpt that could lead somewhere. It’s where your ideas learn to belong to each other.
+                        Stitch is a place where ideas come together — gently, naturally, piece by piece. It’s where your ideas learn to belong to each other.
                     </p>
                 </div>
             )}

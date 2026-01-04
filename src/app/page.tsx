@@ -9,7 +9,6 @@ import { Category, getCategoryStyles } from '@/utils/categories';
 
 // Components
 import ConnectFolder from '@/components/ConnectFolder';
-import InstallExtensionModal from '@/components/InstallExtensionModal';
 import HighlightFeed from '@/components/stitch/HighlightFeed';
 import DocumentFeed from '@/components/stitch/DocumentFeed';
 import RightSidebar from '@/components/stitch/RightSidebar';
@@ -79,7 +78,6 @@ function HomeContent() {
   const [newlyCreatedDocId, setNewlyCreatedDocId] = useState<string | null>(null);
   const [activeDocId, setActiveDocId] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
-  const [isInstallModalOpen, setIsInstallModalOpen] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   // --- Drag and Drop Hook ---
@@ -346,14 +344,11 @@ function HomeContent() {
             activeDocId={activeDocId}
             scrollToDocument={scrollToDocument}
             isExtensionAvailable={isExtensionAvailable}
-            setIsInstallModalOpen={setIsInstallModalOpen}
             selectedCategory={selectedCategory}
             setSelectedCategory={setSelectedCategory}
             handleCreateDocument={handleCreateDocument}
           />
         </motion.div>
-
-        <InstallExtensionModal isOpen={isInstallModalOpen} onClose={() => setIsInstallModalOpen(false)} />
 
         <DragOverlay dropAnimation={dropAnimation}>
           {activeDragItem ? (

@@ -8,6 +8,19 @@ chrome.action.onClicked.addListener(() => {
 // Handle context menu click
 chrome.contextMenus.onClicked.addListener(async (info, tab) => {
   if (info.menuItemId === "save-highlight" && info.selectionText) {
+
+    // 1. Inject content script (idempotent, effectively)
+    // We need to inject because we removed broad host permissions.
+    try {
+      await chrome.scripting.executeScript({
+        target: { tabId: tab.id },
+        files: ['content.js']
+      });
+    } catch (err) {
+      console.warn('Injection failed (maybe already there or restricted):', err);
+      // Proceed anyway, maybe it was auto-injected (if on app domain)
+    }
+
     const highlightData = {
       text: info.selectionText,
       url: tab.url,
@@ -16,14 +29,27 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
     };
 
     // Send message to content script to show modal
+    const sendMessageWithRetry = async (retries = 3) => {
+      try {
+        await chrome.tabs.sendMessage(tab.id, {
+          type: 'SHOW_SAVE_MODAL',
+          data: highlightData,
+          documents: []
+        });
+      } catch (err) {
+        if (retries > 0) {
+          // Wait 100ms and retry
+          await new Promise(r => setTimeout(r, 100));
+          return sendMessageWithRetry(retries - 1);
+        }
+        throw err;
+      }
+    };
+
     try {
-      await chrome.tabs.sendMessage(tab.id, {
-        type: 'SHOW_SAVE_MODAL',
-        data: highlightData,
-        documents: [] // No documents for now as we are offline/local
-      });
+      await sendMessageWithRetry();
     } catch (err) {
-      console.error('Could not send message to content script:', err);
+      console.error('Could not send message to content script after retries:', err);
       // Fallback: save directly if content script fails (e.g. restricted page)
       saveToStorage({
         ...highlightData,

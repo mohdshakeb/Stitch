@@ -90,10 +90,9 @@ export default function Header({ variant = 'default', actions }: HeaderProps) {
                     <Image
                         src={resolvedTheme === 'dark' ? "/logo-dark.png" : "/logo.png"}
                         alt="App Logo"
-                        width={120}
-                        height={40}
+                        width={90}
+                        height={30}
                         className="object-contain object-left h-10 w-auto"
-                        style={{ width: 'auto', height: 'auto' }}
                         priority
                     />
                 )}
